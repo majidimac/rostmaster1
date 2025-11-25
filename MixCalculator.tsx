@@ -2,11 +2,22 @@ import React, { useState, useMemo } from 'react';
 import { Trash2, PlusCircle } from 'lucide-react';
 import { Ingredient } from '../types';
 
+/**
+ * A component for calculating the cost of a coffee mix based on its ingredients.
+ * The cost can be calculated based on the percentage or weight of each ingredient.
+ * @returns {JSX.Element} The rendered mix calculator component.
+ */
 export const MixCalculator: React.FC = () => {
+  /**
+   * State to hold the list of ingredients in the mix.
+   */
   const [ingredients, setIngredients] = useState<Ingredient[]>([
     { id: Date.now().toString(), name: '', percentage: 100, weight: 1000, pricePerKg: 0 },
   ]);
 
+  /**
+   * Adds a new ingredient to the mix.
+   */
   const addIngredient = () => {
     setIngredients([
       ...ingredients,
@@ -14,16 +25,30 @@ export const MixCalculator: React.FC = () => {
     ]);
   };
 
+  /**
+   * Removes an ingredient from the mix.
+   * @param {string} id The id of the ingredient to remove.
+   */
   const removeIngredient = (id: string) => {
     setIngredients(ingredients.filter((ing) => ing.id !== id));
   };
 
+  /**
+   * Updates a field of a specific ingredient.
+   * @param {string} id The id of the ingredient to update.
+   * @param {keyof Ingredient} field The field to update.
+   * @param {string | number} value The new value for the field.
+   */
   const updateIngredient = (id: string, field: keyof Ingredient, value: string | number) => {
     setIngredients(
       ingredients.map((ing) => (ing.id === id ? { ...ing, [field]: value } : ing))
     );
   };
 
+  /**
+   * Calculates the price of the mix based on the percentage and weight of the ingredients.
+   * @returns {{priceByPercentage: number, priceByWeight: number}} An object containing the price calculated by percentage and by weight.
+   */
   const { priceByPercentage, priceByWeight } = useMemo(() => {
     const totalPercentage = ingredients.reduce((sum, ing) => sum + Number(ing.percentage), 0);
     const totalWeight = ingredients.reduce((sum, ing) => sum + Number(ing.weight), 0);

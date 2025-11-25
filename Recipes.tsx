@@ -3,12 +3,18 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ArrowRight, Plus, Clock, Coffee, Droplets, Play, Pause, RotateCcw, Edit2, Trash2, ChevronRight, Check, StopCircle } from 'lucide-react';
 import useLocalStorage from '../../hooks/useLocalStorage';
 
+/**
+ * Represents a single step in a brewing recipe.
+ */
 interface BrewStep {
   time: number; // seconds from start
   description: string;
   waterAmount?: number; // cumulative water amount target
 }
 
+/**
+ * Represents a complete brewing recipe.
+ */
 interface BrewRecipe {
   id: string;
   title: string;
@@ -20,7 +26,9 @@ interface BrewRecipe {
   steps: BrewStep[];
 }
 
-// Define comprehensive default recipes
+/**
+ * A set of default recipes to populate the application.
+ */
 const defaultRecipes: BrewRecipe[] = [
   {
     id: 'espresso-double',
@@ -100,6 +108,9 @@ const defaultRecipes: BrewRecipe[] = [
   },
 ];
 
+/**
+ * An empty recipe object, used as a template for creating new recipes.
+ */
 const emptyRecipe: BrewRecipe = {
   id: '',
   title: '',
@@ -111,11 +122,25 @@ const emptyRecipe: BrewRecipe = {
   steps: [],
 };
 
+/**
+ * Props for the Recipes component.
+ */
 interface RecipesProps {
+  /** A callback function to be called when the user clicks the "back" button. */
   onBack: () => void;
 }
 
+/**
+ * A component for managing and timing coffee brewing recipes.
+ * It allows users to view, create, edit, and delete recipes, as well as
+ * use a built-in timer to follow the steps of a recipe.
+ * @param {RecipesProps} props The component props.
+ * @returns {JSX.Element} The rendered recipes component.
+ */
 export const Recipes: React.FC<RecipesProps> = ({ onBack }) => {
+  /**
+   * State for the list of recipes, persisted in local storage.
+   */
   const [recipes, setRecipes] = useLocalStorage<BrewRecipe[]>('brewRecipes', defaultRecipes);
   const [view, setView] = useState<'list' | 'detail' | 'edit' | 'brew'>('list');
   const [selectedRecipe, setSelectedRecipe] = useState<BrewRecipe | null>(null);
@@ -129,13 +154,20 @@ export const Recipes: React.FC<RecipesProps> = ({ onBack }) => {
   const [brewFinished, setBrewFinished] = useState(false);
   const timerRef = useRef<number | null>(null);
 
-  // Helpers
+  /**
+   * Formats a time in seconds into a m:ss format.
+   * @param {number} seconds The time in seconds.
+   * @returns {string} The formatted time string.
+   */
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
     return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
+  /**
+   * Plays a beep sound to provide auditory feedback to the user.
+   */
   const playBeep = () => {
     const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
     if (!AudioContextClass) return;
@@ -150,7 +182,9 @@ export const Recipes: React.FC<RecipesProps> = ({ onBack }) => {
     osc.stop(ctx.currentTime + 0.2);
   };
 
-  // --- Timer Logic ---
+  /**
+   * Effect to manage the brewing timer interval.
+   */
   useEffect(() => {
     if (isBrewing) {
       timerRef.current = window.setInterval(() => {
@@ -164,7 +198,9 @@ export const Recipes: React.FC<RecipesProps> = ({ onBack }) => {
     };
   }, [isBrewing]);
 
-  // Check steps for audio feedback
+  /**
+   * Effect to check for recipe steps and provide audio feedback.
+   */
   useEffect(() => {
     if (isBrewing && selectedRecipe) {
       const currentStep = selectedRecipe.steps.find((s) => s.time === brewTime);
@@ -174,8 +210,9 @@ export const Recipes: React.FC<RecipesProps> = ({ onBack }) => {
     }
   }, [brewTime, isBrewing, selectedRecipe]);
 
-  // --- Handlers ---
-
+  /**
+   * Saves a new or edited recipe.
+   */
   const handleSaveRecipe = () => {
     if (!editRecipe.title) return alert('لطفاً نام دستورالعمل را وارد کنید');
     
@@ -191,6 +228,10 @@ export const Recipes: React.FC<RecipesProps> = ({ onBack }) => {
     setView('list');
   };
 
+  /**
+   * Deletes a recipe.
+   * @param {string} id The id of the recipe to delete.
+   */
   const handleDeleteRecipe = (id: string) => {
     if (window.confirm('آیا از حذف این دستورالعمل اطمینان دارید؟')) {
       setRecipes((prev) => prev.filter((r) => r.id !== id));
@@ -198,6 +239,9 @@ export const Recipes: React.FC<RecipesProps> = ({ onBack }) => {
     }
   };
 
+  /**
+   * Starts the brewing timer for the selected recipe.
+   */
   const handleStartBrew = () => {
     setBrewTime(0);
     setBrewFinished(false);
@@ -205,14 +249,23 @@ export const Recipes: React.FC<RecipesProps> = ({ onBack }) => {
     setView('brew');
   };
 
+  /**
+   * Toggles the brewing timer on and off.
+   */
   const toggleTimer = () => setIsBrewing(!isBrewing);
   
+  /**
+   * Resets the brewing timer.
+   */
   const resetTimer = () => {
     setIsBrewing(false);
     setBrewTime(0);
     setBrewFinished(false);
   };
 
+  /**
+   * Adds a new step to the recipe being edited.
+   */
   const addStep = () => {
     const lastTime = editRecipe.steps.length > 0 
         ? editRecipe.steps[editRecipe.steps.length - 1].time + 10 
@@ -223,19 +276,31 @@ export const Recipes: React.FC<RecipesProps> = ({ onBack }) => {
     });
   };
 
+  /**
+   * Updates a field of a specific recipe step.
+   * @param {number} index The index of the step to update.
+   * @param {keyof BrewStep} field The field to update.
+   * @param {any} value The new value for the field.
+   */
   const updateStep = (index: number, field: keyof BrewStep, value: any) => {
       const newSteps = [...editRecipe.steps];
       newSteps[index] = { ...newSteps[index], [field]: value };
       setEditRecipe({ ...editRecipe, steps: newSteps });
   };
 
+  /**
+   * Removes a step from the recipe being edited.
+   * @param {number} index The index of the step to remove.
+   */
   const removeStep = (index: number) => {
       const newSteps = editRecipe.steps.filter((_, i) => i !== index);
       setEditRecipe({ ...editRecipe, steps: newSteps });
   };
 
-  // --- Renders ---
-
+  /**
+   * Renders the list of recipes.
+   * @returns {JSX.Element} The rendered recipe list.
+   */
   const renderList = () => (
     <div className="space-y-4 animate-fade-in">
       <div className="flex items-center justify-between mb-4">
@@ -294,6 +359,10 @@ export const Recipes: React.FC<RecipesProps> = ({ onBack }) => {
     </div>
   );
 
+  /**
+   * Renders the details of a selected recipe.
+   * @returns {JSX.Element | null} The rendered recipe details, or null if no recipe is selected.
+   */
   const renderDetail = () => {
     if (!selectedRecipe) return null;
     const ratio = Math.round(selectedRecipe.waterWeight / selectedRecipe.coffeeWeight);
@@ -399,6 +468,10 @@ export const Recipes: React.FC<RecipesProps> = ({ onBack }) => {
     );
   };
 
+  /**
+   * Renders the recipe editor for creating or modifying a recipe.
+   * @returns {JSX.Element} The rendered recipe editor.
+   */
   const renderEditor = () => (
     <div className="space-y-4 animate-fade-in pb-24">
         <h2 className="text-xl font-bold text-amber-400 mb-4">
@@ -532,6 +605,10 @@ export const Recipes: React.FC<RecipesProps> = ({ onBack }) => {
     </div>
   );
 
+  /**
+   * Renders the brewing timer view.
+   * @returns {JSX.Element | null} The rendered brewing timer, or null if no recipe is selected.
+   */
   const renderBrew = () => {
     if (!selectedRecipe) return null;
     const currentStepIdx = selectedRecipe.steps.findIndex((s) => s.time > brewTime);

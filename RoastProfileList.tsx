@@ -2,13 +2,26 @@ import React from 'react';
 import { Trash2, Coffee } from 'lucide-react';
 import { RoastProfile } from '../../types';
 
+/**
+ * Props for the RoastProfileList component.
+ */
 interface RoastProfileListProps {
+  /** An array of roast profiles to display. */
   profiles: RoastProfile[];
+  /** A callback function to be called when a profile is selected. */
   onSelectProfile: (profile: RoastProfile) => void;
+  /** A callback function to be called when the "new profile" button is clicked. */
   onNewProfile: () => void;
+  /** A callback function to be called when a profile is deleted. */
   onDeleteProfile: (id: string) => void;
 }
 
+/**
+ * A component that displays a list of saved roast profiles.
+ * It allows for selecting, creating, and deleting profiles.
+ * @param {RoastProfileListProps} props The component props.
+ * @returns {JSX.Element} The rendered list of roast profiles.
+ */
 export const RoastProfileList: React.FC<RoastProfileListProps> = ({
   profiles,
   onSelectProfile,

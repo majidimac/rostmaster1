@@ -6,13 +6,40 @@ import { PriceListGenerator } from './modules/PriceListGenerator';
 import { SettingsPage } from './modules/Settings';
 import { CoffeeMaster } from './modules/CoffeeMaster';
 
+/**
+ * Defines the available pages within the Roast Master section.
+ */
 type Page = 'roast' | 'calculator' | 'pricelist' | 'settings';
+
+/**
+ * Defines the main sections of the application.
+ */
 type AppSection = 'portal' | 'roast-master' | 'coffee-master';
 
+/**
+ * The main application component. It acts as a router to navigate between the main portal,
+ * the Roast Master section, and the Coffee Master section.
+ * @returns {JSX.Element} The rendered application.
+ */
 const App: React.FC = () => {
+  /**
+   * State to manage the currently active application section.
+   * 'portal' is the main landing page.
+   * 'roast-master' is the section for roast profiling, mix calculation, and price lists.
+   * 'coffee-master' is the section for barista tools and cafe management.
+   */
   const [appSection, setAppSection] = useState<AppSection>('portal');
+
+  /**
+   * State to manage the currently active page within the Roast Master section.
+   * Defaults to 'roast'.
+   */
   const [activePage, setActivePage] = useState<Page>('roast');
 
+  /**
+   * Renders the appropriate component for the active page in the Roast Master section.
+   * @returns {JSX.Element} The component for the active page.
+   */
   const renderRoastMasterPage = () => {
     switch (activePage) {
       case 'roast':
@@ -28,6 +55,14 @@ const App: React.FC = () => {
     }
   };
 
+  /**
+   * A navigation item component for the bottom navigation bar in the Roast Master section.
+   * @param {object} props - The component props.
+   * @param {Page} props.page - The page this item navigates to.
+   * @param {string} props.label - The text label for the navigation item.
+   * @param {React.ReactNode} props.icon - The icon for the navigation item.
+   * @returns {JSX.Element} A button element that acts as a navigation link.
+   */
   const NavItem: React.FC<{ page: Page; label: string; icon: React.ReactNode }> = ({ page, label, icon }) => (
     <button
       onClick={() => setActivePage(page)}
@@ -40,7 +75,11 @@ const App: React.FC = () => {
     </button>
   );
 
-  // Common Home Button Component
+  /**
+   * A reusable home button component that navigates back to the main portal.
+   * This version is themed for the Roast Master section.
+   * @returns {JSX.Element} A button element that navigates to the portal.
+   */
   const HomeButton = () => (
     <button 
         onClick={() => setAppSection('portal')}
@@ -54,7 +93,11 @@ const App: React.FC = () => {
     </button>
   );
 
-  // Coffee Master Specific Home Button (Cyan Theme)
+  /**
+   * A reusable home button component that navigates back to the main portal.
+   * This version is themed for the Coffee Master section with a cyan color scheme.
+   * @returns {JSX.Element} A button element that navigates to the portal.
+   */
   const CoffeeHomeButton = () => (
     <button 
         onClick={() => setAppSection('portal')}

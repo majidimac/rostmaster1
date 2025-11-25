@@ -1,9 +1,22 @@
 import React from 'react';
 import { Save, Upload } from 'lucide-react';
 
+/**
+ * Props for the SettingsPage component.
+ */
 interface SettingsPageProps {}
 
+/**
+ * A component for managing application settings, including exporting and importing user data.
+ * All data is stored in and retrieved from local storage.
+ * @param {SettingsPageProps} props The component props.
+ * @returns {JSX.Element} The rendered settings page.
+ */
 export const SettingsPage: React.FC<SettingsPageProps> = () => {
+  /**
+   * Handles the export of user data. It retrieves data from local storage,
+   * creates a JSON file, and triggers a download.
+   */
   const handleExport = () => {
     const roastProfiles = localStorage.getItem('roastProfiles');
     const priceListBusinessInfo = localStorage.getItem('priceListBusinessInfo');
@@ -28,6 +41,11 @@ export const SettingsPage: React.FC<SettingsPageProps> = () => {
     document.body.removeChild(linkElement);
   };
 
+  /**
+   * Handles the import of user data from a JSON file.
+   * It reads the file, parses the JSON, and stores the data in local storage.
+   * @param {React.ChangeEvent<HTMLInputElement>} event The file input change event.
+   */
   const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) {
