@@ -1,0 +1,5 @@
+{
+  "name": "Roast Master PWA",
+  "description": "A comprehensive coffee roasting companion app featuring roast profiling, mix calculation, and price list generation.",
+  "requestFramePermissions": []
+}

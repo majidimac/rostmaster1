@@ -1,0 +1,794 @@
+
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Roast Master PWA</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Fonts -->
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+    
+    <!-- HTML to Image -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html-to-image/1.11.11/html-to-image.min.js"></script>
+
+    <style>
+      body {
+        font-family: 'Vazirmatn', sans-serif;
+        background-color: #111827;
+        color: #f3f4f6;
+        -webkit-tap-highlight-color: transparent;
+        overflow-x: hidden;
+      }
+      .font-mono-digital {
+        font-family: 'Orbitron', monospace, 'Vazirmatn';
+      }
+      /* Custom Scrollbar */
+      ::-webkit-scrollbar { width: 8px; height: 8px; }
+      ::-webkit-scrollbar-track { background: #1f2937; }
+      ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
+      ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+      
+      /* Animations */
+      @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+      .animate-fade-in { animation: fade-in 0.3s ease-out forwards; }
+      
+      @keyframes drip { 0% { transform: translateY(-20px) scale(0.5); opacity: 0; } 20% { opacity: 1; } 100% { transform: translateY(250px) scale(1); opacity: 0; } }
+      .animate-drip-1 { animation: drip 1.2s infinite linear; }
+      .animate-drip-2 { animation: drip 1.5s infinite linear 0.5s; }
+      .animate-drip-3 { animation: drip 1.0s infinite linear 0.2s; }
+
+      @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+      .animate-spin-slow { animation: spin-slow 3s linear infinite; }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useCallback, useMemo } = React;
+
+        // --- ICONS ---
+        const IconWrapper = ({ children, className, ...props }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} {...props}>{children}</svg>;
+        const Flame = (p) => <IconWrapper {...p}><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></IconWrapper>;
+        const Coffee = (p) => <IconWrapper {...p}><path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><line x1="6" x2="6" y1="2" y2="4"/><line x1="10" x2="10" y1="2" y2="4"/><line x1="14" x2="14" y1="2" y2="4"/></IconWrapper>;
+        const ClipboardList = (p) => <IconWrapper {...p}><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></IconWrapper>;
+        const Settings = (p) => <IconWrapper {...p}><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></IconWrapper>;
+        const Store = (p) => <IconWrapper {...p}><path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="M2 7h20"/><path d="M22 7v3a2 2 0 0 1-2 2v0a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 16 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 12 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 8 12a2.7 2.7 0 0 1-1.59-.63.7.7 0 0 0-.82 0A2.7 2.7 0 0 1 4 12v0a2 2 0 0 1-2-2V7"/></IconWrapper>;
+        const ArrowRight = (p) => <IconWrapper {...p}><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></IconWrapper>;
+        const Home = (p) => <IconWrapper {...p}><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></IconWrapper>;
+        const Wind = (p) => <IconWrapper {...p}><path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2"/><path d="M9.6 4.6A2 2 0 1 1 11 8H2"/><path d="M12.6 19.4A2 2 0 1 0 14 16H2"/></IconWrapper>;
+        const RotateCw = (p) => <IconWrapper {...p}><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></IconWrapper>;
+        const Zap = (p) => <IconWrapper {...p}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></IconWrapper>;
+        const LogOut = (p) => <IconWrapper {...p}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></IconWrapper>;
+        const Trash2 = (p) => <IconWrapper {...p}><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></IconWrapper>;
+        const PlusCircle = (p) => <IconWrapper {...p}><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/></IconWrapper>;
+        const Download = (p) => <IconWrapper {...p}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></IconWrapper>;
+        const Share2 = (p) => <IconWrapper {...p}><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/></IconWrapper>;
+        const Save = (p) => <IconWrapper {...p}><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></IconWrapper>;
+        const Upload = (p) => <IconWrapper {...p}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></IconWrapper>;
+        const Droplets = (p) => <IconWrapper {...p}><path d="M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.84-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z"/><path d="M12.56 6.6A10.97 10.97 0 0 0 14 3.02c.5 2.5 2 4.9 4 6.5s3 3.5 3 5.5a6.98 6.98 0 0 1-11.91 4.97"/></IconWrapper>;
+        const Play = (p) => <IconWrapper {...p}><polygon points="5 3 19 12 5 21 5 3"/></IconWrapper>;
+        const CheckCircle = (p) => <IconWrapper {...p}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></IconWrapper>;
+        const AlertCircle = (p) => <IconWrapper {...p}><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></IconWrapper>;
+        const RotateCcw = (p) => <IconWrapper {...p}><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></IconWrapper>;
+        const Square = (p) => <IconWrapper {...p}><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/></IconWrapper>;
+        const Clock = (p) => <IconWrapper {...p}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></IconWrapper>;
+        const SkipForward = (p) => <IconWrapper {...p}><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" x2="19" y1="5" y2="19"/></IconWrapper>;
+        const BookOpen = (p) => <IconWrapper {...p}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></IconWrapper>;
+        const Calculator = (p) => <IconWrapper {...p}><rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></IconWrapper>;
+        const TrendingUp = (p) => <IconWrapper {...p}><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></IconWrapper>;
+        const TrendingDown = (p) => <IconWrapper {...p}><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></IconWrapper>;
+        const DollarSign = (p) => <IconWrapper {...p}><line x1="12" x2="12" y1="1" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></IconWrapper>;
+        const Briefcase = (p) => <IconWrapper {...p}><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></IconWrapper>;
+        const Package = (p) => <IconWrapper {...p}><path d="m16.5 9.4-9-5.19"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" x2="12" y1="22.08" y2="12"/></IconWrapper>;
+        const Edit = (p) => <IconWrapper {...p}><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></IconWrapper>;
+        const Edit2 = (p) => <IconWrapper {...p}><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></IconWrapper>;
+        const ArrowLeft = (p) => <IconWrapper {...p}><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></IconWrapper>;
+        const ChevronRight = (p) => <IconWrapper {...p}><path d="m9 18 6-6-6-6"/></IconWrapper>;
+        const StopCircle = (p) => <IconWrapper {...p}><circle cx="12" cy="12" r="10"/><rect width="6" height="6" x="9" y="9"/></IconWrapper>;
+        const Check = (p) => <IconWrapper {...p}><polyline points="20 6 9 17 4 12"/></IconWrapper>;
+        const Pause = (p) => <IconWrapper {...p}><rect width="4" height="16" x="6" y="4"/><rect width="4" height="16" x="14" y="4"/></IconWrapper>;
+        const Plus = (p) => <IconWrapper {...p}><path d="M5 12h14"/><path d="M12 5v14"/></IconWrapper>;
+
+        // --- HELPERS ---
+        const ControlType = { Flame: 'FLAME', DrumFan: 'DRUM_FAN', CoolingFan: 'COOLING_FAN', DrumRotation: 'DRUM_ROTATION', DrumSpeed: 'DRUM_SPEED' };
+        const EventType = { FirstCrack: 'FIRST_CRACK', Discharge: 'DISCHARGE', ControlChange: 'CONTROL_CHANGE' };
+
+        const formatTime = (totalSeconds) => {
+          const minutes = Math.floor(totalSeconds / 60);
+          const seconds = totalSeconds % 60;
+          return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        };
+
+        const toCamelCase = (str) => str.toLowerCase().replace(/_([a-z])/g, (_match, p1) => p1.toUpperCase());
+
+        const getEventDescription = (event, includeTime = true) => {
+          const time = formatTime(event.timestamp);
+          const timeString = includeTime ? ` در ${time}` : '';
+          switch (event.type) {
+            case EventType.FirstCrack: return `ترک اول${timeString}`;
+            case EventType.Discharge: return `تخلیه${timeString}`;
+            case EventType.ControlChange: {
+              const controlLabels = { [ControlType.Flame]: 'شعله', [ControlType.DrumFan]: 'فن درام', [ControlType.CoolingFan]: 'فن کولینگ', [ControlType.DrumRotation]: 'چرخش درام', [ControlType.DrumSpeed]: 'سرعت درام' };
+              const controlLabel = (event.control && controlLabels[event.control]) || event.control;
+              const valueLabel = event.control === ControlType.DrumSpeed ? `${event.value} RPM` : event.value;
+              return `${controlLabel} به ${valueLabel}${timeString}`;
+            }
+            default: return '';
+          }
+        };
+
+        // --- HOOKS ---
+        function useLocalStorage(key, initialValue) {
+          const [storedValue, setStoredValue] = useState(() => {
+            try {
+              const item = window.localStorage.getItem(key);
+              return item ? JSON.parse(item) : initialValue;
+            } catch (error) { return initialValue; }
+          });
+          useEffect(() => {
+            try { window.localStorage.setItem(key, JSON.stringify(storedValue)); } catch (error) {}
+          }, [key, storedValue]);
+          return [storedValue, setStoredValue];
+        }
+
+        // --- COMPONENTS: ROAST PROFILER ---
+        const RoastTimeline = ({ events, duration, currentTime, isEditing, onEventUpdate, onEventClick, highlightedEventTimestamp }) => {
+          const timelineRef = useRef(null);
+          const draggingEventRef = useRef(null);
+
+          const getEventIcon = (event) => {
+            switch (event.type) {
+              case EventType.FirstCrack: return <Zap className="w-5 h-5 text-orange-400" />;
+              case EventType.Discharge: return <LogOut className="w-5 h-5 text-red-500" />;
+              case EventType.ControlChange:
+                switch (event.control) {
+                  case ControlType.Flame: return <Flame className="w-4 h-4 text-red-400" />;
+                  case ControlType.DrumFan: case ControlType.CoolingFan: return <Wind className="w-4 h-4 text-cyan-400" />;
+                  case ControlType.DrumRotation: case ControlType.DrumSpeed: return <RotateCw className="w-4 h-4 text-green-400" />;
+                  default: return <div className="w-2 h-2 bg-gray-400 rounded-full" />;
+                }
+              default: return null;
+            }
+          };
+
+          const handleMouseMove = useCallback((e) => {
+            if (!draggingEventRef.current || !timelineRef.current || !onEventUpdate) return;
+            const bounds = timelineRef.current.getBoundingClientRect();
+            const newX = e.clientX - bounds.left;
+            const percent = Math.max(0, Math.min(1, newX / bounds.width));
+            onEventUpdate({ ...draggingEventRef.current, timestamp: Math.round(percent * duration) });
+          }, [duration, onEventUpdate]);
+
+          const handleMouseUp = useCallback(() => { draggingEventRef.current = null; }, []);
+
+          useEffect(() => {
+            if (isEditing) {
+              window.addEventListener('mousemove', handleMouseMove);
+              window.addEventListener('mouseup', handleMouseUp);
+              return () => { window.removeEventListener('mousemove', handleMouseMove); window.removeEventListener('mouseup', handleMouseUp); };
+            }
+          }, [isEditing, handleMouseMove, handleMouseUp]);
+
+          return (
+            <div className="bg-gray-900 p-4 rounded-lg my-4 border border-gray-800 shadow-inner">
+              <div ref={timelineRef} className="relative w-full h-10 pt-2 pb-2 select-none">
+                <div className="absolute top-1/2 -translate-y-1/2 w-full h-1 bg-gray-700 rounded-full" />
+                {events.map((event, idx) => (
+                  <div key={`${event.type}-${idx}`} className="absolute top-1/2 -translate-y-1/2 group cursor-pointer" style={{ left: `${(event.timestamp / duration) * 100}%`, zIndex: 10 }} onMouseDown={isEditing ? (e) => { if(!isEditing) return; draggingEventRef.current=event; e.preventDefault(); } : undefined} onClick={isEditing ? () => onEventClick?.(event) : undefined}>
+                    <div className={`relative flex items-center justify-center -translate-x-1/2 ${isEditing ? 'cursor-grab' : ''}`}>
+                      <div className={`absolute w-full h-full rounded-full transition-transform ${draggingEventRef.current === event ? 'scale-150 bg-amber-500/50' : ''} ${highlightedEventTimestamp === event.timestamp ? 'animate-ping absolute h-6 w-6 rounded-full bg-amber-400 opacity-75' : ''}`} />
+                      <div className="relative bg-gray-800 rounded-full p-1 border border-gray-600 shadow-sm">{getEventIcon(event)}</div>
+                      <div className="absolute bottom-full mb-2 w-max px-2 py-1 text-xs text-white bg-gray-800 border border-gray-600 rounded-md opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-20 pointer-events-none shadow-lg">{getEventDescription(event, true)}</div>
+                    </div>
+                  </div>
+                ))}
+                <div className="absolute top-0 bottom-0 w-0.5 bg-amber-500 z-20 pointer-events-none" style={{ left: `${(currentTime / (duration || 1)) * 100}%` }} />
+              </div>
+            </div>
+          );
+        };
+
+        const EventEditModal = ({ event, onSave, onClose }) => {
+          const [temp, setTemp] = useState(event);
+          return (
+            <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[60] p-4 backdrop-blur-sm" onClick={onClose}>
+              <div className="bg-gray-800 p-6 rounded-xl shadow-2xl w-full max-w-md space-y-4 border border-gray-700" onClick={e => e.stopPropagation()}>
+                <h2 className="text-xl font-bold text-amber-400">ویرایش</h2>
+                <p className="text-sm text-gray-300 bg-gray-900 p-2 rounded border border-gray-700">{getEventDescription(event, true)}</p>
+                <input type="number" value={temp.timestamp} onChange={e => setTemp({...temp, timestamp: parseInt(e.target.value)||0})} className="w-full bg-gray-700 p-3 rounded-md border border-gray-600 text-white" />
+                {temp.control === ControlType.Flame && <div className="grid grid-cols-4 gap-2">{['OFF','LOW','MEDIUM','HIGH'].map(v => <button key={v} onClick={() => setTemp({...temp, value: v})} className={`py-2 rounded ${temp.value===v?'bg-amber-500 text-black':'bg-gray-700'}`}>{v}</button>)}</div>}
+                {(temp.control === ControlType.DrumFan || temp.control === ControlType.CoolingFan) && <div className="grid grid-cols-2 gap-2">{['OFF','ON'].map(v => <button key={v} onClick={() => setTemp({...temp, value: v})} className={`py-2 rounded ${temp.value===v?'bg-amber-500 text-black':'bg-gray-700'}`}>{v}</button>)}</div>}
+                <div className="flex gap-3 pt-4"><button onClick={() => onSave(temp)} className="w-full bg-blue-600 text-white font-bold py-2 rounded">ذخیره</button><button onClick={onClose} className="w-full bg-gray-700 text-white font-bold py-2 rounded">لغو</button></div>
+              </div>
+            </div>
+          );
+        };
+
+        const RoastControlPanel = ({ profileToLoad, onBack, onSave }) => {
+          const [isRecording, setIsRecording] = useState(false);
+          const [isReplaying, setIsReplaying] = useState(false);
+          const [isEditing, setIsEditing] = useState(false);
+          const [timer, setTimer] = useState(0);
+          const [devTimer, setDevTimer] = useState(0);
+          const [firstCrackTime, setFirstCrackTime] = useState(null);
+          const [eventToEdit, setEventToEdit] = useState(null);
+          const [profileName, setProfileName] = useState('');
+          const [greenBeanWeight, setGreenBeanWeight] = useState(0);
+          const [chargeTemp, setChargeTemp] = useState(0);
+          const [finalWeight, setFinalWeight] = useState(0);
+          const [finalTemp, setFinalTemp] = useState(0);
+          const [greenBeanPrice, setGreenBeanPrice] = useState(0);
+          const [roastFee, setRoastFee] = useState(0);
+          const [isEditingFinal, setIsEditingFinal] = useState(false);
+          const [events, setEvents] = useState([]);
+          const [editableEvents, setEditableEvents] = useState([]);
+          const [controls, setControls] = useState({ flame: 'OFF', drumFan: 'OFF', coolingFan: 'OFF', drumRotation: 'LEFT', drumSpeed: 0 });
+          const [baseFlame, setBaseFlame] = useState('LOW');
+          const timerRef = useRef(null);
+
+          useEffect(() => {
+            if(profileToLoad) {
+              setProfileName(profileToLoad.name); setGreenBeanWeight(profileToLoad.greenBeanWeight); setChargeTemp(profileToLoad.chargeTemp);
+              setFinalWeight(profileToLoad.finalWeight||0); setFinalTemp(profileToLoad.finalTemp||0); setGreenBeanPrice(profileToLoad.greenBeanPrice||0); setRoastFee(profileToLoad.roastFee||0);
+              setEvents(profileToLoad.events);
+              const initC = { flame: 'OFF', drumFan: 'OFF', coolingFan: 'OFF', drumRotation: 'LEFT', drumSpeed: 0 };
+              profileToLoad.events.filter(e => e.timestamp === 0 && e.type === EventType.ControlChange).forEach(e => initC[toCamelCase(e.control)] = e.value);
+              setControls(initC); if(initC.flame !== 'OFF') setBaseFlame(initC.flame);
+            } else {
+              setIsRecording(false); setIsReplaying(false); setIsEditing(false); setTimer(0); setDevTimer(0); setFirstCrackTime(null);
+              setProfileName(''); setGreenBeanWeight(0); setChargeTemp(0); setEvents([]); setControls({ flame: 'OFF', drumFan: 'OFF', coolingFan: 'OFF', drumRotation: 'LEFT', drumSpeed: 0 });
+            }
+            return () => clearInterval(timerRef.current);
+          }, [profileToLoad]);
+
+          const startTimer = () => { clearInterval(timerRef.current); timerRef.current = setInterval(() => setTimer(t => t+1), 1000); };
+          const stopTimer = () => clearInterval(timerRef.current);
+
+          const handleStart = () => {
+              if(!profileName) { alert('نام پروفایل را وارد کنید'); return; }
+              setIsRecording(true); setEvents([{ timestamp: 0, type: EventType.ControlChange, control: ControlType.Flame, value: controls.flame }]); startTimer();
+          };
+          const handleDischarge = () => {
+             setIsRecording(false); stopTimer();
+             const finalEvents = [...events, { timestamp: timer, type: EventType.Discharge }];
+             setEvents(finalEvents);
+             onSave({ id: profileToLoad?.id||Date.now().toString(), name: profileName, greenBeanWeight, chargeTemp, events: finalEvents, createdAt: new Date().toISOString(), finalWeight, finalTemp });
+          };
+          
+          const addEvent = (type, control, value) => { if(isRecording) setEvents(prev => [...prev, { timestamp: timer, type, control, value }]); };
+          const handleControl = (k, v) => { setControls(prev => ({...prev, [k]: v})); if(isRecording) addEvent(EventType.ControlChange, ControlType[k.charAt(0).toUpperCase()+k.slice(1)], v); };
+          
+          const handleSaveFinalDetails = () => {
+              onSave({...profileToLoad, finalWeight, finalTemp, greenBeanPrice, roastFee});
+              setIsEditingFinal(false);
+          };
+
+          useEffect(() => { if(firstCrackTime !== null) setDevTimer(timer - firstCrackTime); }, [timer, firstCrackTime]);
+
+          const playBeep = useCallback(() => {
+            const AC = window.AudioContext || window.webkitAudioContext; if(!AC) return;
+            const ctx = new AC(); const o = ctx.createOscillator(); const g = ctx.createGain();
+            o.connect(g); g.connect(ctx.destination); g.gain.setValueAtTime(0.1, ctx.currentTime); o.frequency.setValueAtTime(880, ctx.currentTime); o.start(); o.stop(ctx.currentTime+0.1);
+          }, []);
+
+          useEffect(() => {
+             if(isReplaying) {
+                 const evs = profileToLoad?.events.filter(e => e.timestamp === timer) || [];
+                 if(evs.length > 0) playBeep();
+                 evs.forEach(e => {
+                     if(e.type === EventType.ControlChange) { setControls(prev => ({...prev, [toCamelCase(e.control)]: e.value})); if(e.control === ControlType.Flame && e.value !== 'OFF') setBaseFlame(e.value); }
+                     if(e.type === EventType.FirstCrack) setFirstCrackTime(e.timestamp);
+                     if(e.type === EventType.Discharge) { stopTimer(); setIsReplaying(false); }
+                 });
+             }
+          }, [timer, isReplaying]);
+
+          const cost = useMemo(() => {
+              if(!greenBeanWeight || !finalWeight) return 0;
+              return (((greenBeanWeight/1000)*greenBeanPrice)+((greenBeanWeight/1000)*roastFee)) / (finalWeight/1000);
+          }, [greenBeanWeight, finalWeight, greenBeanPrice, roastFee]);
+
+           const loss = useMemo(() => {
+                if(!greenBeanWeight || !finalWeight) return 0;
+                return ((greenBeanWeight-finalWeight)/greenBeanWeight)*100;
+           }, [greenBeanWeight, finalWeight]);
+
+          return (
+             <div className="p-4 max-w-lg mx-auto bg-gray-800 rounded-xl shadow-2xl space-y-4 mb-24 mt-4 border border-gray-700 animate-fade-in">
+                 {eventToEdit && <EventEditModal event={eventToEdit} onClose={()=>setEventToEdit(null)} onSave={(u)=>{setEditableEvents(prev=>prev.map(e=>e===eventToEdit?u:e).sort((a,b)=>a.timestamp-b.timestamp)); setEventToEdit(null);}} />}
+                 <div className="flex justify-between items-center border-b border-gray-700 pb-4">
+                     <h2 className="text-xl font-bold text-amber-400">{isEditing?'ویرایش':profileToLoad?profileName:'رُست جدید'}</h2>
+                     {!isEditing && <button onClick={onBack} className="text-gray-400">بازگشت</button>}
+                 </div>
+                 {(isEditing || (!profileToLoad && !isRecording)) && <div className="space-y-3"><input value={profileName} onChange={e=>setProfileName(e.target.value)} placeholder="نام پروفایل" className="w-full bg-gray-900 p-3 rounded-lg text-white"/><div className="flex gap-2"><input type="number" placeholder="وزن" value={greenBeanWeight} onChange={e=>setGreenBeanWeight(Number(e.target.value))} className="w-1/2 bg-gray-900 p-3 rounded text-white"/><input type="number" placeholder="دما" value={chargeTemp} onChange={e=>setChargeTemp(Number(e.target.value))} className="w-1/2 bg-gray-900 p-3 rounded text-white"/></div></div>}
+                 {!isEditing && <div className="grid grid-cols-2 gap-4 text-center"><div className="bg-black/40 p-4 rounded border-2 border-cyan-500"><div className="text-xs text-cyan-400">تایمر</div><div className="text-4xl font-bold font-mono-digital">{formatTime(timer)}</div></div><div className={`bg-black/40 p-4 rounded border-2 ${firstCrackTime?'border-orange-500':'border-gray-700'}`}><div className="text-xs text-orange-400">توسعه</div><div className="text-4xl font-bold font-mono-digital">{formatTime(devTimer)}</div></div></div>}
+                 {(isRecording || isReplaying || isEditing || (profileToLoad && events.length>0)) && <RoastTimeline events={isEditing?editableEvents:events} duration={Math.max(timer, 1200)} currentTime={timer} isEditing={isEditing} onEventClick={setEventToEdit} onEventUpdate={e => setEditableEvents(prev => prev.map(ev => ev === e ? e : ev))} />}
+                 {isRecording && <div className="space-y-3"><div className="bg-gray-900 p-3 rounded flex gap-2"><button onClick={() => handleControl('flame', controls.flame==='OFF'?baseFlame:'OFF')} className={`w-1/3 rounded ${controls.flame!=='OFF'?'bg-red-600':'bg-gray-700'}`}>شعله</button><div className="w-2/3 grid grid-cols-3 gap-1">{['LOW','MEDIUM','HIGH'].map(v=><button key={v} onClick={()=>{setBaseFlame(v); if(controls.flame!=='OFF') handleControl('flame',v);}} className={`rounded text-xs ${baseFlame===v?'bg-amber-500 text-black':'bg-gray-700'}`}>{v}</button>)}</div></div><div className="grid grid-cols-2 gap-2"><button onClick={()=>{setFirstCrackTime(timer); addEvent(EventType.FirstCrack)}} disabled={firstCrackTime!==null} className="bg-orange-600 p-4 rounded font-bold">ترک اول</button><button onClick={handleDischarge} className="bg-red-600 p-4 rounded font-bold">تخلیه</button></div></div>}
+                 <div className="pt-2">{isEditing ? <button onClick={()=>{onSave({...profileToLoad, name: profileName, greenBeanWeight, chargeTemp, events: editableEvents}); setIsEditing(false);}} className="w-full bg-blue-600 text-white p-3 rounded font-bold">ذخیره</button> : !isRecording && !isReplaying && profileToLoad && <div className="flex gap-2"><button onClick={()=>{setIsReplaying(true); startTimer();}} className="flex-1 bg-blue-600 p-3 rounded font-bold">پخش</button><button onClick={()=>{setEditableEvents([...events]); setIsEditing(true);}} className="flex-1 bg-amber-600 p-3 rounded font-bold">ویرایش</button></div>}</div>
+                 {!isRecording && !isReplaying && !isEditing && !profileToLoad && <button onClick={handleStart} className="w-full bg-green-600 text-white p-4 rounded font-bold text-lg">شروع رُست</button>}
+                 {profileToLoad && !isRecording && !isEditing && <div className="bg-gray-900 p-4 rounded-xl mt-4 border border-gray-700"><div className="flex justify-between"><h3 className="text-amber-300">نتایج</h3><button onClick={()=>setIsEditingFinal(!isEditingFinal)}><Edit className="w-4 h-4 text-gray-400"/></button></div>{isEditingFinal ? <div className="space-y-2 mt-2"><input placeholder="وزن نهایی" value={finalWeight} onChange={e=>setFinalWeight(Number(e.target.value))} className="w-full bg-gray-800 p-2 rounded"/><input placeholder="قیمت دانه" value={greenBeanPrice} onChange={e=>setGreenBeanPrice(Number(e.target.value))} className="w-full bg-gray-800 p-2 rounded"/><input placeholder="اجرت رست" value={roastFee} onChange={e=>setRoastFee(Number(e.target.value))} className="w-full bg-gray-800 p-2 rounded"/><button onClick={handleSaveFinalDetails} className="w-full bg-blue-600 p-2 rounded text-white">ذخیره</button></div> : <div className="mt-2 text-sm space-y-1"><div className="flex justify-between"><span>وزن نهایی</span><span>{finalWeight}g</span></div><div className="flex justify-between text-green-400"><span>قیمت تمام شده</span><span>{Math.round(cost).toLocaleString()}</span></div><div className="flex justify-between text-orange-400"><span>افت وزن</span><span>{Math.round(loss*100)/100}%</span></div></div>}</div>}
+             </div>
+          );
+        };
+
+        const RoastProfiler = ({onBack}) => {
+            const [profiles, setProfiles] = useLocalStorage('roastProfiles', []);
+            const [selected, setSelected] = useState(null);
+            const [isPanelOpen, setIsPanelOpen] = useState(false); // Added to fix New Profile bug
+
+            if(isPanelOpen) {
+                return <RoastControlPanel profileToLoad={selected} onBack={()=>setIsPanelOpen(false)} onSave={(p)=>{setProfiles(prev=>{const idx=prev.findIndex(x=>x.id===p.id); return idx>-1?prev.map(x=>x.id===p.id?p:x):[...prev,p]}); setSelected(p);}} />;
+            }
+
+            return (
+                <div className="p-4 pb-20 max-w-lg mx-auto">
+                    <div className="flex justify-between items-center mb-4"><div className="flex items-center gap-2"><h1 className="text-2xl font-bold text-amber-400">پروفایل‌ها</h1><button onClick={onBack}><ArrowRight/></button></div><button onClick={()=>{setSelected(null); setIsPanelOpen(true);}} className="bg-amber-500 text-black px-4 py-2 rounded-lg font-bold">+ جدید</button></div>
+                    {profiles.map(p=><div key={p.id} onClick={()=>{setSelected(p); setIsPanelOpen(true);}} className="bg-gray-800 p-4 rounded-xl mb-2 flex justify-between items-center cursor-pointer border border-gray-700 hover:border-amber-500"><div><h3 className="font-bold text-white">{p.name}</h3><div className="text-xs text-gray-400">{new Date(p.createdAt).toLocaleDateString('fa-IR')}</div></div><button onClick={(e)=>{e.stopPropagation();if(confirm('حذف؟'))setProfiles(profiles.filter(x=>x.id!==p.id))}} className="text-red-500 p-2"><Trash2/></button></div>)}
+                </div>
+            );
+        };
+
+        // --- COMPONENTS: MIX CALCULATOR ---
+        const MixCalculator = ({onBack}) => {
+            const [ingredients, setIngredients] = useState([{ id: '1', name: '', percentage: 100, weight: 1000, pricePerKg: 0 }]);
+            const add = () => setIngredients([...ingredients, { id: Date.now().toString(), name: '', percentage: 0, weight: 0, pricePerKg: 0 }]);
+            const update = (id, f, v) => setIngredients(ingredients.map(i => i.id===id ? {...i, [f]: v} : i));
+            const pricePct = ingredients.reduce((s,i)=>s+(Number(i.pricePerKg)*(Number(i.percentage)/ingredients.reduce((a,b)=>a+Number(b.percentage),0))),0);
+            const totalW = ingredients.reduce((s,i)=>s+Number(i.weight),0);
+            const priceW = totalW ? ingredients.reduce((s,i)=>s+(Number(i.weight)/1000*Number(i.pricePerKg)),0)/(totalW/1000) : 0;
+            
+            return (
+                <div className="p-4 max-w-lg mx-auto pb-20 animate-fade-in">
+                    <div className="flex justify-between mb-6"><h1 className="text-2xl font-bold text-center text-amber-400">میکس قهوه</h1><button onClick={onBack}><ArrowRight/></button></div>
+                    {ingredients.map((ing, idx)=><div key={ing.id} className="bg-gray-800 p-4 rounded-xl border border-gray-700 mb-3 space-y-2"><div className="flex justify-between"><span className="text-amber-300">ماده {idx+1}</span>{ingredients.length>1&&<button onClick={()=>setIngredients(ingredients.filter(i=>i.id!==ing.id))}><Trash2 className="text-red-500"/></button>}</div><input type="text" placeholder="نام" value={ing.name} onChange={e => update(ing.id, 'name', e.target.value)} className="w-full bg-gray-700 p-2 rounded text-white"/><div className="grid grid-cols-3 gap-2"><input type="number" placeholder="%" value={ing.percentage} onChange={e => update(ing.id, 'percentage', Number(e.target.value))} className="bg-gray-700 p-2 rounded text-white text-center"/><input type="number" placeholder="وزن" value={ing.weight} onChange={e => update(ing.id, 'weight', Number(e.target.value))} className="bg-gray-700 p-2 rounded text-white text-center"/><input type="number" placeholder="قیمت" value={ing.pricePerKg} onChange={e => update(ing.id, 'pricePerKg', Number(e.target.value))} className="bg-gray-700 p-2 rounded text-white text-center"/></div></div>)}
+                    <button onClick={add} className="w-full bg-gray-700 text-amber-400 py-3 rounded-xl mb-6 flex justify-center gap-2"><PlusCircle/> افزودن</button>
+                    <div className="bg-gray-800 p-5 rounded-xl border border-gray-700 text-center space-y-2">
+                        <div><p className="text-gray-400 text-sm">قیمت تمام شده (درصد)</p><p className="text-xl font-bold text-white">{Math.round(pricePct).toLocaleString()}</p></div>
+                        <div className="border-t border-gray-700 pt-2"><p className="text-gray-400 text-sm">قیمت تمام شده (وزن)</p><p className="text-xl font-bold text-white">{Math.round(priceW).toLocaleString()}</p></div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- COMPONENTS: PRICE LIST ---
+        const PriceListGenerator = ({onBack}) => {
+            const [info, setInfo] = useLocalStorage('pl_info', { brandName: '', phone: '', instagram: '' });
+            const [products, setProducts] = useLocalStorage('pl_prod', { coffee: [], greenBean: [], powders: [] });
+            const ref = useRef(null);
+            const [isGenerating, setIsGenerating] = useState(false);
+            
+            const add = (cat) => setProducts({...products, [cat]: [...products[cat], { id: Date.now().toString(), name: '', price: '' }]});
+            const update = (cat, id, f, v) => setProducts({...products, [cat]: products[cat].map(p=>p.id===id?{...p,[f]:v}:p)});
+            const remove = (cat, id) => setProducts({...products, [cat]: products[cat].filter(p=>p.id!==id)});
+            
+            const dl = async () => {
+                if(ref.current && window.htmlToImage) {
+                    setIsGenerating(true);
+                    try {
+                        const data = await window.htmlToImage.toJpeg(ref.current, { quality: 0.95, pixelRatio: 2 });
+                        const l = document.createElement('a'); l.download = 'pricelist.jpeg'; l.href = data; l.click();
+                    } catch(e) { alert('Error'); }
+                    setIsGenerating(false);
+                }
+            };
+
+            const count = (products.coffee.length>0?1:0) + (products.greenBean.length>0?1:0) + (products.powders.length>0?1:0);
+            const gridCols = count===3?'grid-cols-3':count===2?'grid-cols-2':'grid-cols-1';
+
+            return (
+                <div className="p-4 max-w-4xl mx-auto lg:grid lg:grid-cols-2 gap-8 pb-20 animate-fade-in">
+                    <div className="space-y-4">
+                        <div className="flex justify-between"><h1 className="text-2xl font-bold text-amber-400 text-center">لیست قیمت</h1><button onClick={onBack}><ArrowRight/></button></div>
+                        <div className="bg-gray-800 p-4 rounded-xl"><input placeholder="نام برند" value={info.brandName} onChange={e=>setInfo({...info,brandName:e.target.value})} className="w-full bg-gray-700 p-2 rounded text-white mb-2"/><input placeholder="اینستاگرام" value={info.instagram} onChange={e=>setInfo({...info,instagram:e.target.value})} className="w-full bg-gray-700 p-2 rounded text-white"/></div>
+                        {['coffee','greenBean','powders'].map(cat => (
+                            <div key={cat} className="bg-gray-800 p-4 rounded-xl">
+                                <h3 className="text-amber-300 font-bold mb-2">{cat==='coffee'?'قهوه رست شده':cat==='greenBean'?'دانه سبز':'پودریجات'}</h3>
+                                {products[cat].map(p=><div key={p.id} className="flex gap-2 mb-2"><input value={p.name} onChange={e=>update(cat,p.id,'name',e.target.value)} className="flex-grow bg-gray-700 p-2 rounded text-white"/><input type="number" value={p.price} onChange={e=>update(cat,p.id,'price',e.target.value)} className="w-24 bg-gray-700 p-2 rounded text-white text-center"/><button onClick={()=>remove(cat,p.id)} className="text-red-500"><Trash2/></button></div>)}
+                                <button onClick={()=>add(cat)} className="text-sm text-amber-400 flex items-center gap-1"><PlusCircle className="w-4 h-4"/> افزودن</button>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="mt-8 lg:mt-0 sticky top-4">
+                        <div ref={ref} className="bg-gray-900 p-8 text-center border border-gray-700 aspect-[1/1.414] flex flex-col relative overflow-hidden shadow-2xl">
+                            <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-amber-500 to-yellow-300"></div>
+                            <h1 className="text-4xl font-bold text-amber-400 mb-8 mt-4">{info.brandName||'نام برند'}</h1>
+                            <div className={`flex-grow grid ${gridCols} gap-4 content-start text-right`}>
+                                {products.coffee.length>0 && <div><h2 className="text-xl font-bold text-white border-b border-amber-500 inline-block mb-2 pl-4 pr-2">قهوه رست شده</h2>{products.coffee.map(p=><div key={p.id} className="flex justify-between text-gray-300 text-sm border-b border-gray-800 py-2 px-2"><span>{p.name}</span><span className="font-mono-digital font-bold text-amber-500">{Number(p.price).toLocaleString()}</span></div>)}</div>}
+                                {products.greenBean.length>0 && <div><h2 className="text-xl font-bold text-white border-b border-green-500 inline-block mb-2 pl-4 pr-2">دانه سبز</h2>{products.greenBean.map(p=><div key={p.id} className="flex justify-between text-gray-300 text-sm border-b border-gray-800 py-2 px-2"><span>{p.name}</span><span className="font-mono-digital font-bold text-green-500">{Number(p.price).toLocaleString()}</span></div>)}</div>}
+                                {products.powders.length>0 && <div><h2 className="text-xl font-bold text-white border-b border-blue-500 inline-block mb-2 pl-4 pr-2">پودریجات</h2>{products.powders.map(p=><div key={p.id} className="flex justify-between text-gray-300 text-sm border-b border-gray-800 py-2 px-2"><span>{p.name}</span><span className="font-mono-digital font-bold text-blue-500">{Number(p.price).toLocaleString()}</span></div>)}</div>}
+                            </div>
+                            <div className="text-gray-500 text-sm mt-4 pt-4 border-t border-gray-800">{info.instagram && <span>Instagram: @{info.instagram}</span>}</div>
+                        </div>
+                        <button onClick={dl} disabled={isGenerating} className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl mt-4 flex items-center justify-center gap-2"><Download/> {isGenerating?'...':'دانلود تصویر'}</button>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- COMPONENTS: SETTINGS ---
+        const SettingsPage = ({onBack}) => {
+            const exportData = () => {
+                const data = { 
+                    profiles: JSON.parse(localStorage.getItem('roastProfiles')||'[]'),
+                    recipes: JSON.parse(localStorage.getItem('brewRecipes')||'[]'),
+                    income: JSON.parse(localStorage.getItem('inc')||'{}')
+                };
+                const a = document.createElement('a');
+                a.href = 'data:text/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(data));
+                a.download = 'roast_master_backup.json';
+                a.click();
+            };
+            const importData = (e) => {
+                const fr = new FileReader();
+                fr.onload = (ev) => {
+                    try {
+                        const d = JSON.parse(ev.target.result);
+                        if(d.profiles) localStorage.setItem('roastProfiles', JSON.stringify(d.profiles));
+                        if(d.recipes) localStorage.setItem('brewRecipes', JSON.stringify(d.recipes));
+                        if(d.income) localStorage.setItem('inc', JSON.stringify(d.income));
+                        alert('با موفقیت انجام شد. صفحه رفرش می‌شود.');
+                        window.location.reload();
+                    } catch(err) { alert('فایل نامعتبر'); }
+                };
+                fr.readAsText(e.target.files[0]);
+            };
+            return (
+                <div className="p-4 max-w-lg mx-auto space-y-6 animate-fade-in">
+                    <div className="flex justify-between mb-6"><h1 className="text-2xl font-bold text-center text-amber-400">تنظیمات</h1><button onClick={onBack}><ArrowRight/></button></div>
+                    <div className="bg-gray-800 p-6 rounded-xl border border-gray-700 text-center space-y-4">
+                        <button onClick={exportData} className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2"><Save/> دانلود بکاپ</button>
+                        <div className="relative">
+                            <input type="file" id="imp" className="hidden" onChange={importData} />
+                            <label htmlFor="imp" className="w-full bg-green-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 cursor-pointer"><Upload/> بازگردانی بکاپ</label>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // --- COMPONENTS: COFFEE MASTER (Backflush) ---
+        const Backflush = ({ onBack }) => {
+            const [phase, setPhase] = useState('intro');
+            const [cycle, setCycle] = useState(1);
+            const [timer, setTimer] = useState(0);
+            const [pump, setPump] = useState('waiting'); // waiting, on, off
+            const timerRef = useRef(null);
+
+            // Constants
+            const DETERGENT_CYCLES = 5; const RINSE_CYCLES = 10;
+            const DET_ON = 10; const DET_OFF = 10; const RIN_ON = 5; const RIN_OFF = 5; const SOAK_TIME = 1200;
+
+            const playBeep = (type) => {
+                const AC = window.AudioContext || window.webkitAudioContext; if(!AC) return;
+                const ctx = new AC(); const o = ctx.createOscillator(); const g = ctx.createGain();
+                o.connect(g); g.connect(ctx.destination);
+                if(type === 'start') { o.frequency.setValueAtTime(800, ctx.currentTime); o.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime+0.1); }
+                else if(type === 'stop') { o.frequency.setValueAtTime(1200, ctx.currentTime); o.frequency.exponentialRampToValueAtTime(600, ctx.currentTime+0.1); }
+                else { o.frequency.setValueAtTime(600, ctx.currentTime); }
+                g.gain.setValueAtTime(0.1, ctx.currentTime); o.start(); o.stop(ctx.currentTime + 0.3);
+            };
+
+            useEffect(() => {
+                if((pump==='on'||pump==='off'||phase==='soak_timer') && timer>0) {
+                    timerRef.current = setInterval(()=>setTimer(t=>t-1), 1000);
+                } else if (timer===0 && (pump!=='waiting' || phase==='soak_timer')) {
+                    handleFinish();
+                }
+                return () => clearInterval(timerRef.current);
+            }, [timer, pump, phase]);
+
+            const handleFinish = () => {
+                clearInterval(timerRef.current);
+                if (phase === 'soak_timer') { playBeep('finish'); setPhase('finished'); return; }
+                
+                if (pump === 'on') {
+                    playBeep('stop'); 
+                    setPump('off'); 
+                    setTimer(phase==='detergent'?DET_OFF:RIN_OFF);
+                } else if (pump === 'off') {
+                    const max = phase==='detergent'?DETERGENT_CYCLES:RINSE_CYCLES;
+                    if(cycle < max) { 
+                        setCycle(c=>c+1); 
+                        setPump('on'); 
+                        playBeep('start'); 
+                        setTimer(phase==='detergent'?DET_ON:RIN_ON); 
+                    } else { 
+                        playBeep('finish'); 
+                        setPump('waiting'); 
+                        setPhase(phase==='detergent'?'rinse_intro':phase==='rinse'?'soak_intro':'finished'); 
+                    }
+                }
+            };
+
+            const startSeq = () => { playBeep('start'); setPump('on'); setCycle(1); setTimer(phase==='detergent'?DET_ON:RIN_ON); };
+
+            return (
+                <div className="p-4 max-w-lg mx-auto min-h-[80vh] flex flex-col">
+                    <div className="flex justify-between items-center mb-6"><h2 className="text-2xl font-bold text-cyan-400 flex gap-2"><Droplets/> بک‌واش</h2><button onClick={onBack}><ArrowRight/></button></div>
+                    <div className="flex-grow flex flex-col items-center justify-center space-y-6 w-full">
+                        {phase==='intro' && <div className="text-center space-y-6 w-full"><div className="bg-gray-800 p-6 rounded-2xl border border-gray-700"><AlertCircle className="w-16 h-16 text-cyan-500 mx-auto mb-4"/><p>بسکت کور و پودر شوینده را آماده کنید.</p></div><button onClick={()=>{setPhase('detergent');setPump('waiting')}} className="w-full bg-cyan-600 text-white font-bold py-4 rounded-xl">شروع شستشو</button></div>}
+                        {phase==='rinse_intro' && <div className="text-center space-y-6 w-full"><div className="bg-gray-800 p-6 rounded-2xl border border-gray-700"><RotateCcw className="w-16 h-16 text-cyan-500 mx-auto mb-4"/><p>پرتافیلتر را بشویید و آماده آبکشی شوید.</p></div><button onClick={()=>{setPhase('rinse');setPump('waiting')}} className="w-full bg-cyan-600 text-white font-bold py-4 rounded-xl">شروع آبکشی</button></div>}
+                        {(phase==='detergent'||phase==='rinse') && <div className="w-full space-y-6">
+                             <div className="flex justify-between px-2">{Array.from({length:phase==='detergent'?DETERGENT_CYCLES:RINSE_CYCLES}).map((_,i)=><div key={i} className={`h-2 rounded-full flex-1 mx-0.5 ${i+1<cycle?'bg-cyan-500':i+1===cycle?(pump!=='waiting'?'bg-yellow-400 animate-pulse':'bg-gray-600'):'bg-gray-700'}`}></div>)}</div>
+                             <div className={`relative h-64 w-full bg-gray-800 rounded-3xl flex items-center justify-center border transition-colors duration-500 ${pump==='on'?'border-red-500 shadow-[inset_0_0_20px_rgba(239,68,68,0.2)]':'border-gray-700'}`}>
+                                 <div className="text-center relative z-10">
+                                     {pump==='waiting' ? <div className="text-3xl font-bold text-cyan-400 animate-pulse">آماده</div> : <div className={`text-7xl font-mono-digital font-bold ${pump==='on'?'text-red-500':'text-cyan-400'}`}>{timer}s</div>}
+                                     <div className="mt-4 bg-black/50 px-4 py-2 rounded-full">{pump==='on'?'پمپ روشن':pump==='off'?'استراحت':'شروع کنید'}</div>
+                                 </div>
+                                 {pump==='on' && <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full overflow-hidden pointer-events-none"><div className="absolute top-0 left-1/2 animate-drip-1 text-red-500"><div className="w-4 h-6 bg-red-500 rounded-full"></div></div></div>}
+                             </div>
+                             {pump==='waiting' ? <button onClick={startSeq} className="w-full bg-green-600 text-white font-bold py-5 rounded-2xl flex justify-center gap-2"><Play/> اجرا</button> : <button onClick={()=>{setPump('waiting');setTimer(0)}} className="w-full bg-gray-800 border border-gray-600 text-gray-400 font-bold py-5 rounded-2xl flex justify-center gap-2"><Square/> توقف</button>}
+                             <button onClick={()=>{setTimer(0);setPump('waiting');setPhase(phase==='detergent'?'rinse_intro':phase==='rinse'?'soak_intro':'finished')}} className="w-full text-gray-500 flex justify-center gap-2"><SkipForward/> رد شدن</button>
+                        </div>}
+                        {phase==='soak_intro' && <div className="text-center space-y-6 w-full"><div className="bg-gray-800 p-6 rounded-2xl border border-gray-700"><Coffee className="w-16 h-16 text-cyan-500 mx-auto mb-4"/><p>قطعات را در محلول خیس کنید (20 دقیقه).</p></div><button onClick={()=>{setPhase('soak_timer');setTimer(SOAK_TIME)}} className="w-full bg-cyan-600 text-white font-bold py-4 rounded-xl">شروع تایمر</button><button onClick={()=>setPhase('finished')} className="text-gray-500 w-full">رد شدن</button></div>}
+                        {phase==='soak_timer' && <div className="text-center space-y-6 w-full"><div className="relative w-64 h-64 mx-auto flex items-center justify-center"><div className="absolute inset-0 border-4 border-cyan-500 rounded-full border-t-transparent animate-spin-slow"></div><div className="text-5xl font-mono-digital font-bold">{formatTime(timer)}</div></div><button onClick={()=>setPhase('finished')} className="w-full bg-gray-700 py-4 rounded-xl">پایان دستی</button></div>}
+                        {phase==='finished' && <div className="text-center space-y-6 w-full"><CheckCircle className="w-24 h-24 text-green-500 mx-auto"/><h2 className="text-3xl font-bold">پایان عملیات</h2><button onClick={onBack} className="w-full bg-gray-700 py-4 rounded-xl font-bold">بازگشت</button></div>}
+                    </div>
+                </div>
+            );
+        };
+
+        // --- COMPONENTS: COFFEE MASTER (Recipes) ---
+        const Recipes = ({ onBack }) => {
+            const defaultRecipes = [
+                { id: 'espresso-double', title: 'اسپرسو دبل حرفه‌ای', method: 'Espresso', coffeeWeight: 19, waterWeight: 38, grindSize: 'بسیار ریز', temp: 93, steps: [{time:0,description:'شروع پمپ - چک فشار',waterAmount:0}, {time:5,description:'اولین قطره عصاره',waterAmount:2}, {time:15,description:'جریان دم موشی',waterAmount:20}, {time:30,description:'قطع عصاره‌گیری',waterAmount:38}] },
+                { id: 'v60-std', title: 'V60 هاریو', method: 'V60', coffeeWeight: 20, waterWeight: 320, grindSize: 'متوسط', temp: 93, steps: [{time:0,description:'بلومینگ با ۶۰ گرم آب',waterAmount:60}, {time:45,description:'ریزش اول تا ۲۰۰ گرم',waterAmount:200}, {time:105,description:'ریزش دوم تا ۳۲۰ گرم',waterAmount:320}, {time:180,description:'پایان دم‌آوری',waterAmount:320}] },
+                { id: 'chemex', title: 'کمکس', method: 'Chemex', coffeeWeight: 30, waterWeight: 500, grindSize: 'درشت', temp: 94, steps: [{time:0,description:'بلومینگ',waterAmount:60}, {time:45,description:'ریزش تا ۳۰۰ گرم',waterAmount:300}, {time:105,description:'ریزش تا ۵۰۰ گرم',waterAmount:500}, {time:240,description:'سرو',waterAmount:500}] }
+            ];
+            const [recipes, setRecipes] = useLocalStorage('brewRecipes', defaultRecipes);
+            const [view, setView] = useState('list');
+            const [sel, setSel] = useState(null);
+            const [editR, setEditR] = useState({id:'',title:'',method:'V60',coffeeWeight:0,waterWeight:0,grindSize:'',temp:93,steps:[]});
+            
+            // Brewer State
+            const [brewTime, setBrewTime] = useState(0);
+            const [isBrewing, setIsBrewing] = useState(false);
+            const timerRef = useRef(null);
+
+            useEffect(() => { if(isBrewing) timerRef.current = setInterval(()=>setBrewTime(t=>t+1), 1000); else clearInterval(timerRef.current); return ()=>clearInterval(timerRef.current); }, [isBrewing]);
+
+            // Audio Feedback
+            const beep = () => { const AC=window.AudioContext||window.webkitAudioContext;if(AC){const c=new AC();const o=c.createOscillator();const g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.setValueAtTime(880,c.currentTime);g.gain.setValueAtTime(0.1,c.currentTime);o.start();o.stop(c.currentTime+0.2);} };
+            useEffect(() => { if(isBrewing && sel && sel.steps.find(s=>s.time===brewTime)) beep(); }, [brewTime, isBrewing, sel]);
+
+            const saveEdit = () => { 
+                if(!editR.title) return alert('نام الزامی است');
+                setRecipes(prev=>{const idx=prev.findIndex(r=>r.id===editR.id);return idx>-1?prev.map(r=>r.id===editR.id?editR:r):[...prev,editR]}); 
+                setView('list'); 
+            };
+
+            const renderBrew = () => {
+                if(!sel) return null;
+                const idx = sel.steps.findIndex(s=>s.time>brewTime);
+                const curr = idx===-1 ? sel.steps[sel.steps.length-1] : sel.steps[Math.max(0,idx-1)];
+                const next = idx===-1 ? null : sel.steps[idx];
+                return (
+                    <div className="flex flex-col min-h-[80vh] justify-between pb-32 animate-fade-in">
+                        <div className="text-center"><h2 className="text-2xl font-bold text-white">{sel.title}</h2><div className="text-gray-400">{sel.coffeeWeight}g قهوه | {sel.waterWeight}ml آب</div></div>
+                        <div className="flex justify-center py-8"><div className={`w-64 h-64 rounded-full flex items-center justify-center border-8 transition-all ${isBrewing?'border-cyan-500 shadow-[0_0_40px_rgba(6,182,212,0.3)]':'border-gray-700'}`}><div className="text-center"><div className="text-7xl font-mono-digital font-bold text-white">{formatTime(brewTime)}</div><div className="text-xs text-gray-500 font-bold tracking-widest mt-2">زمان کل</div></div></div></div>
+                        <div className="bg-gray-800 p-6 rounded-2xl border border-gray-700 text-center"><div className="text-xs text-cyan-400 uppercase font-bold">مرحله فعلی</div><div className="text-xl font-bold text-white mt-2">{curr.description}</div>{curr.waterAmount && <div className="mt-2 inline-block bg-blue-900/40 text-blue-300 px-3 py-1 rounded text-sm">وزن هدف: {curr.waterAmount}g</div>}</div>
+                        {next && <div className="text-center opacity-60 text-sm mt-4">مرحله بعد در {formatTime(next.time)}: {next.description}</div>}
+                        <div className="fixed bottom-0 left-0 right-0 z-50 bg-gray-900 p-4 border-t border-gray-800 flex gap-4 max-w-lg mx-auto"><button onClick={()=>setIsBrewing(!isBrewing)} className={`flex-1 py-4 rounded-xl font-bold flex items-center justify-center gap-2 text-lg ${isBrewing?'bg-amber-600':'bg-green-600'}`}>{isBrewing?<Pause className="fill-current"/>:<Play className="fill-current"/>} {isBrewing?'توقف':'شروع'}</button><button onClick={()=>{setIsBrewing(false);setBrewTime(0);}} className="p-4 bg-gray-700 rounded-xl hover:bg-gray-600"><RotateCcw/></button></div>
+                    </div>
+                );
+            };
+
+            const renderEditor = () => (
+                <div className="space-y-4 animate-fade-in pb-24">
+                    <h2 className="text-xl font-bold text-amber-400">{editR.id?'ویرایش':'جدید'}</h2>
+                    <div className="bg-gray-800 p-4 rounded-xl border border-gray-700 space-y-3">
+                        <input placeholder="نام رسپی" value={editR.title} onChange={e=>setEditR({...editR,title:e.target.value})} className="w-full bg-gray-700 p-2 rounded text-white"/>
+                        <div className="grid grid-cols-2 gap-2">
+                            <select value={editR.method} onChange={e=>setEditR({...editR,method:e.target.value})} className="bg-gray-700 p-2 rounded text-white"><option value="V60">V60</option><option value="Espresso">اسپرسو</option><option value="Chemex">کمکس</option><option value="French Press">فرنچ پرس</option><option value="Aeropress">ائروپرس</option></select>
+                            <input placeholder="آسیاب" value={editR.grindSize} onChange={e=>setEditR({...editR,grindSize:e.target.value})} className="bg-gray-700 p-2 rounded text-white"/>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2"><input type="number" placeholder="قهوه" value={editR.coffeeWeight} onChange={e=>setEditR({...editR,coffeeWeight:Number(e.target.value)})} className="bg-gray-700 p-2 rounded text-white text-center"/><input type="number" placeholder="آب" value={editR.waterWeight} onChange={e=>setEditR({...editR,waterWeight:Number(e.target.value)})} className="bg-gray-700 p-2 rounded text-white text-center"/><input type="number" placeholder="دما" value={editR.temp} onChange={e=>setEditR({...editR,temp:Number(e.target.value)})} className="bg-gray-700 p-2 rounded text-white text-center"/></div>
+                    </div>
+                    <div className="space-y-2">
+                        <div className="flex justify-between"><h3 className="font-bold">مراحل</h3><button onClick={()=>setEditR({...editR,steps:[...editR.steps,{time:editR.steps.length>0?editR.steps[editR.steps.length-1].time+10:0,description:'',waterAmount:0}]})} className="text-cyan-400 flex items-center gap-1 text-sm"><Plus className="w-4 h-4"/> افزودن</button></div>
+                        {editR.steps.map((s,i)=><div key={i} className="bg-gray-800 p-2 rounded flex gap-2 items-center"><div className="w-6 h-6 bg-gray-900 rounded-full flex items-center justify-center text-xs shrink-0">{i+1}</div><input type="number" value={s.time} onChange={e=>{const ns=[...editR.steps];ns[i].time=Number(e.target.value);setEditR({...editR,steps:ns})}} className="w-16 bg-gray-700 p-1 rounded text-center text-white"/><input value={s.description} onChange={e=>{const ns=[...editR.steps];ns[i].description=e.target.value;setEditR({...editR,steps:ns})}} className="flex-grow bg-gray-700 p-1 rounded text-white"/><button onClick={()=>{const ns=editR.steps.filter((_,idx)=>idx!==i);setEditR({...editR,steps:ns})}} className="text-red-500"><Trash2 className="w-4 h-4"/></button></div>)}
+                    </div>
+                    <button onClick={saveEdit} className="w-full bg-green-600 text-white font-bold py-3 rounded-xl">ذخیره</button>
+                </div>
+            );
+
+            return (
+                <div className="p-4 max-w-lg mx-auto h-full">
+                    {view!=='list' && <button onClick={()=>{if(isBrewing && !confirm('خروج؟'))return; setView('list'); setIsBrewing(false);}} className="flex items-center text-gray-400 mb-4"><ArrowRight className="ml-1"/> بازگشت</button>}
+                    {view==='list' && <div className="space-y-4">
+                        <div className="flex justify-between"><h2 className="text-xl font-bold text-cyan-400">دستورالعمل‌ها</h2><button onClick={()=>{setEditR({id:Date.now().toString(),title:'',method:'V60',coffeeWeight:0,waterWeight:0,grindSize:'',temp:93,steps:[]});setView('edit')}} className="bg-cyan-600 p-2 rounded text-white"><Plus/></button></div>
+                        {recipes.map(r=><div key={r.id} className="bg-gray-800 p-4 rounded-xl border border-gray-700 hover:border-cyan-500 relative group cursor-pointer" onClick={()=>{setSel(r);setView('brew')}}>
+                            <div className="flex justify-between"><h3 className="font-bold text-white">{r.title}</h3><div className="text-sm text-gray-400 bg-gray-900 px-2 rounded">{r.method}</div></div>
+                            <div className="flex gap-4 mt-2 text-sm text-gray-400"><span><Coffee className="w-3 h-3 inline"/> {r.coffeeWeight}g</span><span><Droplets className="w-3 h-3 inline"/> {r.waterWeight}ml</span></div>
+                            <div className="absolute left-2 bottom-2 flex gap-2"><button onClick={(e)=>{e.stopPropagation();setEditR(r);setView('edit')}} className="p-1 bg-gray-700 rounded hover:bg-blue-600"><Edit2 className="w-4 h-4"/></button><button onClick={(e)=>{e.stopPropagation();if(confirm('حذف؟'))setRecipes(recipes.filter(x=>x.id!==r.id))}} className="p-1 bg-gray-700 rounded hover:bg-red-600"><Trash2 className="w-4 h-4"/></button></div>
+                        </div>)}
+                    </div>}
+                    {view==='brew' && renderBrew()}
+                    {view==='edit' && renderEditor()}
+                </div>
+            );
+        };
+
+        // --- COMPONENTS: COFFEE MASTER (Income) ---
+        const IncomeCalculator = ({ onBack }) => {
+            const [data, setData] = useLocalStorage('inc', { beanPrice: 800000, dose: 18, milk: 5000, supplies: 3000, other: 0, price: 60000, daily: 50, days: 30, fixed: [{id:'1',name:'اجاره',amount:10000000}] });
+            const [tab, setTab] = useState('results');
+
+            const calc = useMemo(() => {
+                const costPerCup = ((data.beanPrice/1000)*data.dose) + data.milk + data.supplies + data.other;
+                const gross = (data.price - costPerCup) * data.daily * data.days;
+                const fixedTotal = data.fixed.reduce((s,i)=>s+Number(i.amount),0);
+                const net = gross - fixedTotal;
+                const breakEvenMonthly = data.price-costPerCup > 0 ? Math.ceil(fixedTotal/(data.price-costPerCup)) : 0;
+                return { costPerCup, gross, fixedTotal, net, dailyNet: net/data.days, breakEvenMonthly, breakEvenDaily: Math.ceil(breakEvenMonthly/data.days) };
+            }, [data]);
+
+            const addFix = () => setData({...data, fixed:[...data.fixed,{id:Date.now().toString(),name:'',amount:0}]});
+            const upFix = (id,k,v) => setData({...data, fixed:data.fixed.map(x=>x.id===id?{...x,[k]:v}:x)});
+            const delFix = (id) => setData({...data, fixed:data.fixed.filter(x=>x.id!==id)});
+
+            return (
+                <div className="p-4 max-w-lg mx-auto pb-24 animate-fade-in">
+                    <div className="flex justify-between mb-6"><h2 className="text-xl font-bold text-emerald-400 flex gap-2"><Calculator/> محاسبه سود</h2><button onClick={onBack}><ArrowRight/></button></div>
+                    <div className="flex bg-gray-800 p-1 rounded-xl mb-4 text-xs font-bold"><button onClick={()=>setTab('costs')} className={`flex-1 py-2 rounded-lg ${tab==='costs'?'bg-gray-700 text-white':'text-gray-400'}`}>هزینه</button><button onClick={()=>setTab('sales')} className={`flex-1 py-2 rounded-lg ${tab==='sales'?'bg-gray-700 text-white':'text-gray-400'}`}>فروش</button><button onClick={()=>setTab('fixed')} className={`flex-1 py-2 rounded-lg ${tab==='fixed'?'bg-gray-700 text-white':'text-gray-400'}`}>ثابت</button><button onClick={()=>setTab('results')} className={`flex-1 py-2 rounded-lg ${tab==='results'?'bg-emerald-600 text-white':'text-gray-400'}`}>نتایج</button></div>
+                    
+                    {tab==='costs' && <div className="space-y-4 animate-fade-in"><div className="bg-gray-800 p-4 rounded-xl border border-gray-700 space-y-3">
+                        <h3 className="text-emerald-400 font-bold">هزینه مواد (هر کاپ)</h3>
+                        <div><label className="text-xs text-gray-400">قیمت قهوه (Kg)</label><input type="number" value={data.beanPrice} onChange={e=>setData({...data,beanPrice:Number(e.target.value)})} className="w-full bg-gray-700 p-2 rounded text-white"/></div>
+                        <div><label className="text-xs text-gray-400">عصاره (گرم)</label><input type="number" value={data.dose} onChange={e=>setData({...data,dose:Number(e.target.value)})} className="w-full bg-gray-700 p-2 rounded text-white"/></div>
+                        <div><label className="text-xs text-gray-400">شیر (تومان)</label><input type="number" value={data.milk} onChange={e=>setData({...data,milk:Number(e.target.value)})} className="w-full bg-gray-700 p-2 rounded text-white"/></div>
+                        <div><label className="text-xs text-gray-400">لوازم مصرفی</label><input type="number" value={data.supplies} onChange={e=>setData({...data,supplies:Number(e.target.value)})} className="w-full bg-gray-700 p-2 rounded text-white"/></div>
+                        <div className="bg-emerald-900/30 p-2 rounded border border-emerald-500/30 text-center">هزینه کل: {Math.round(calc.costPerCup).toLocaleString()}</div>
+                    </div></div>}
+
+                    {tab==='sales' && <div className="space-y-4 animate-fade-in"><div className="bg-gray-800 p-4 rounded-xl border border-gray-700 space-y-3">
+                        <h3 className="text-blue-400 font-bold">اطلاعات فروش</h3>
+                        <div><label className="text-xs text-gray-400">قیمت فروش (کاپ)</label><input type="number" value={data.price} onChange={e=>setData({...data,price:Number(e.target.value)})} className="w-full bg-gray-700 p-2 rounded text-white"/></div>
+                        <div><label className="text-xs text-gray-400">فروش روزانه (تعداد)</label><input type="number" value={data.daily} onChange={e=>setData({...data,daily:Number(e.target.value)})} className="w-full bg-gray-700 p-2 rounded text-white"/></div>
+                        <div><label className="text-xs text-gray-400">روز کاری در ماه</label><input type="number" value={data.days} onChange={e=>setData({...data,days:Number(e.target.value)})} className="w-full bg-gray-700 p-2 rounded text-white"/></div>
+                    </div></div>}
+
+                    {tab==='fixed' && <div className="space-y-4 animate-fade-in"><div className="bg-gray-800 p-4 rounded-xl border border-gray-700 space-y-3">
+                        <h3 className="text-orange-400 font-bold flex justify-between"><span>هزینه‌های ثابت ماهانه</span><span>{data.fixed.reduce((s,i)=>s+Number(i.amount),0).toLocaleString()}</span></h3>
+                        {data.fixed.map(f=><div key={f.id} className="flex gap-2"><input placeholder="نام" value={f.name} onChange={e=>upFix(f.id,'name',e.target.value)} className="flex-grow bg-gray-700 p-2 rounded text-white text-sm"/><input type="number" placeholder="مبلغ" value={f.amount} onChange={e=>upFix(f.id,'amount',Number(e.target.value))} className="w-24 bg-gray-700 p-2 rounded text-white text-sm"/><button onClick={()=>delFix(f.id)} className="text-red-500"><Trash2/></button></div>)}
+                        <button onClick={addFix} className="w-full border border-dashed border-gray-600 p-2 rounded text-gray-400 flex justify-center gap-1"><Plus className="w-4 h-4"/> افزودن</button>
+                    </div></div>}
+
+                    {tab==='results' && <div className="space-y-4 animate-fade-in">
+                        <div className={`p-6 rounded-2xl border-2 shadow-lg relative overflow-hidden ${calc.net>0?'bg-emerald-900/20 border-emerald-500':'bg-red-900/20 border-red-500'}`}>
+                            <div className="relative z-10">
+                                <div className="text-sm text-gray-400 font-bold">سود خالص ماهانه</div>
+                                <div className={`text-4xl font-bold font-mono-digital my-2 ${calc.net>0?'text-emerald-400':'text-red-400'}`}>{Math.round(calc.net).toLocaleString()} <span className="text-sm font-vazir">تومان</span></div>
+                                <div className="h-px bg-gray-700/50 my-3"></div>
+                                <div className="flex justify-between text-sm"><span>سود روزانه</span><span className="font-bold">{Math.round(calc.dailyNet).toLocaleString()}</span></div>
+                            </div>
+                            <div className="absolute -bottom-6 -left-6 opacity-10">{calc.net>0?<TrendingUp className="w-32 h-32"/>:<TrendingDown className="w-32 h-32"/>}</div>
+                        </div>
+                        <div className="bg-gray-800 p-4 rounded-xl border border-gray-700 flex items-start gap-3"><AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-1"/><div><h4 className="font-bold text-gray-200 text-sm">نقطه سر به سر</h4><p className="text-xs text-gray-400 mt-1 leading-relaxed">شما باید <span className="text-amber-400 font-bold">روزانه</span> حداقل <span className="text-white font-bold font-mono-digital text-sm">{calc.breakEvenDaily.toLocaleString()}</span> کاپ قهوه بفروشید تا هزینه‌های ثابت را پوشش دهید.</p></div></div>
+                        <div className="grid grid-cols-2 gap-3">
+                             <div className="bg-gray-800 p-3 rounded-xl border border-gray-700"><div className="text-xs text-gray-500">سود ناخالص هر کاپ</div><div className="text-lg font-bold text-white">{Math.round(calc.gross/calc.daily/data.days).toLocaleString()}</div></div>
+                             <div className="bg-gray-800 p-3 rounded-xl border border-gray-700"><div className="text-xs text-gray-500">هزینه ثابت ماهانه</div><div className="text-lg font-bold text-orange-300">{calc.fixedTotal.toLocaleString()}</div></div>
+                        </div>
+                    </div>}
+                </div>
+            );
+        };
+
+        // --- MAIN COFFEE MASTER WRAPPER ---
+        const CoffeeMaster = () => {
+             const [page, setPage] = useState('home');
+             if(page==='recipes') return <Recipes onBack={()=>setPage('home')}/>;
+             if(page==='backflush') return <Backflush onBack={()=>setPage('home')}/>;
+             if(page==='income') return <IncomeCalculator onBack={()=>setPage('home')}/>;
+
+             return (
+                 <div className="p-4 max-w-lg mx-auto space-y-6 pt-8 animate-fade-in">
+                     <div className="text-center mb-8"><div className="inline-block p-3 bg-cyan-900/30 rounded-2xl border border-cyan-500/30 mb-4"><Coffee className="w-10 h-10 text-cyan-400"/></div><h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-200 to-cyan-500">کافی مستر</h1><p className="text-gray-400 text-sm mt-2">جعبه ابزار باریستا</p></div>
+                     <div className="grid grid-cols-2 gap-4">
+                         <button onClick={()=>setPage('backflush')} className="bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-cyan-500 p-5 rounded-2xl flex flex-col items-center justify-center gap-3 transition-all shadow-lg"><div className="w-12 h-12 bg-cyan-900/20 rounded-full flex items-center justify-center"><Droplets className="w-6 h-6 text-cyan-400"/></div><span className="font-bold text-gray-200 text-sm">بک‌واش</span></button>
+                         <button onClick={()=>setPage('recipes')} className="bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-amber-500 p-5 rounded-2xl flex flex-col items-center justify-center gap-3 transition-all shadow-lg"><div className="w-12 h-12 bg-amber-900/20 rounded-full flex items-center justify-center"><BookOpen className="w-6 h-6 text-amber-400"/></div><span className="font-bold text-gray-200 text-sm">دستورالعمل‌ها</span></button>
+                         <button onClick={()=>setPage('income')} className="bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-emerald-500 p-5 rounded-2xl flex flex-col items-center justify-center gap-3 transition-all shadow-lg"><div className="w-12 h-12 bg-emerald-900/20 rounded-full flex items-center justify-center"><Calculator className="w-6 h-6 text-emerald-400"/></div><span className="font-bold text-gray-200 text-sm">محاسبه سود</span></button>
+                         <div className="bg-gray-800/50 border border-gray-700/50 p-5 rounded-2xl flex flex-col items-center justify-center gap-3 opacity-60"><div className="w-12 h-12 bg-gray-700/20 rounded-full flex items-center justify-center"><Settings className="w-6 h-6 text-gray-500"/></div><span className="font-bold text-gray-500 text-sm">تنظیمات</span></div>
+                     </div>
+                 </div>
+             );
+        };
+
+        // --- MAIN WRAPPER: ROAST MASTER ---
+        const RoastMaster = () => {
+             const [page, setPage] = useState('home');
+             if(page === 'roast') return <RoastProfiler onBack={()=>setPage('home')} />;
+             if(page === 'mix') return <MixCalculator onBack={()=>setPage('home')} />;
+             if(page === 'price') return <PriceListGenerator onBack={()=>setPage('home')} />;
+             if(page === 'settings') return <SettingsPage onBack={()=>setPage('home')} />;
+             
+             return (
+                 <div className="p-4 max-w-lg mx-auto space-y-6 pt-8 animate-fade-in">
+                     <div className="text-center mb-8"><div className="inline-block p-3 bg-amber-900/30 rounded-2xl border border-amber-500/30 mb-4"><Flame className="w-10 h-10 text-amber-400"/></div><h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-amber-500">رُست مستر</h1><p className="text-gray-400 text-sm mt-2">مدیریت حرفه‌ای رُست</p></div>
+                     <div className="grid grid-cols-2 gap-4">
+                         <button onClick={()=>setPage('roast')} className="bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-amber-500 p-5 rounded-2xl flex flex-col items-center justify-center gap-3 transition-all shadow-lg"><div className="w-12 h-12 bg-amber-900/20 rounded-full flex items-center justify-center"><Flame className="w-6 h-6 text-amber-400"/></div><span className="font-bold text-gray-200 text-sm">پروفایل‌ها</span></button>
+                         <button onClick={()=>setPage('mix')} className="bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-amber-500 p-5 rounded-2xl flex flex-col items-center justify-center gap-3 transition-all shadow-lg"><div className="w-12 h-12 bg-amber-900/20 rounded-full flex items-center justify-center"><Coffee className="w-6 h-6 text-amber-400"/></div><span className="font-bold text-gray-200 text-sm">میکس قهوه</span></button>
+                         <button onClick={()=>setPage('price')} className="bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-amber-500 p-5 rounded-2xl flex flex-col items-center justify-center gap-3 transition-all shadow-lg"><div className="w-12 h-12 bg-amber-900/20 rounded-full flex items-center justify-center"><ClipboardList className="w-6 h-6 text-amber-400"/></div><span className="font-bold text-gray-200 text-sm">لیست قیمت</span></button>
+                         <button onClick={()=>setPage('settings')} className="bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-amber-500 p-5 rounded-2xl flex flex-col items-center justify-center gap-3 transition-all shadow-lg"><div className="w-12 h-12 bg-amber-900/20 rounded-full flex items-center justify-center"><Settings className="w-6 h-6 text-amber-400"/></div><span className="font-bold text-gray-200 text-sm">تنظیمات</span></button>
+                     </div>
+                 </div>
+             );
+        };
+
+        // --- APP ---
+        const App = () => {
+          const [section, setSection] = useState('portal'); 
+
+          if (section === 'portal') {
+            return (
+              <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-gray-900 relative overflow-hidden font-vazir">
+                 <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-amber-600/10 rounded-full blur-[100px]"></div>
+                 <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-cyan-600/10 rounded-full blur-[100px]"></div>
+                 <div className="relative z-10 w-full max-w-md space-y-10">
+                    <div className="text-center mb-12">
+                        <h1 className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-400 to-amber-600 mb-3 font-mono-digital tracking-tighter">MASTER SUITE</h1>
+                        <p className="text-gray-400 text-lg tracking-wide">دستیار حرفه‌ای صنعت قهوه</p>
+                    </div>
+                    <div className="grid gap-5">
+                        <button onClick={() => setSection('roast')} className="group relative w-full text-right overflow-hidden bg-gray-800 border border-gray-700 hover:border-amber-500/50 rounded-3xl p-1 transition-all hover:shadow-[0_0_40px_rgba(245,158,11,0.15)] hover:-translate-y-1">
+                            <div className="bg-gray-900/50 rounded-[20px] p-6 relative z-10 flex items-center gap-5 h-full">
+                                <div className="bg-gradient-to-br from-amber-500/20 to-amber-600/10 p-4 rounded-2xl group-hover:from-amber-500 group-hover:to-amber-600 transition-all"><Flame className="w-10 h-10 text-amber-500 group-hover:text-white" /></div>
+                                <div className="flex-grow"><h2 className="text-2xl font-bold text-gray-100 group-hover:text-amber-400">رُست مستر</h2><p className="text-sm text-gray-500 mt-1">پروفایلینگ، میکس و قیمت‌گذاری</p></div>
+                                <ArrowRight className="w-6 h-6 text-gray-600 group-hover:text-amber-400" />
+                            </div>
+                        </button>
+                        <button onClick={() => setSection('coffee')} className="group relative w-full text-right overflow-hidden bg-gray-800 border border-gray-700 hover:border-cyan-500/50 rounded-3xl p-1 transition-all hover:shadow-[0_0_40px_rgba(6,182,212,0.15)] hover:-translate-y-1">
+                            <div className="bg-gray-900/50 rounded-[20px] p-6 relative z-10 flex items-center gap-5 h-full">
+                                <div className="bg-gradient-to-br from-cyan-500/20 to-cyan-600/10 p-4 rounded-2xl group-hover:from-cyan-500 group-hover:to-cyan-600 transition-all"><Store className="w-10 h-10 text-cyan-500 group-hover:text-white" /></div>
+                                <div className="flex-grow"><h2 className="text-2xl font-bold text-gray-100 group-hover:text-cyan-400">کافی مستر</h2><p className="text-sm text-gray-500 mt-1">ابزارهای باریستا و بار</p></div>
+                                <ArrowRight className="w-6 h-6 text-gray-600 group-hover:text-cyan-400" />
+                            </div>
+                        </button>
+                    </div>
+                    <footer className="absolute bottom-4 left-0 w-full text-center text-gray-600 text-xs font-mono">v1.3.0</footer>
+                 </div>
+              </div>
+            );
+          }
+
+          if (section === 'coffee') {
+              return (
+                  <div className="relative min-h-screen bg-gray-900 font-vazir">
+                      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0"><div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-cyan-600/10 rounded-full blur-[80px]"></div><div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/10 rounded-full blur-[80px]"></div></div>
+                      <button onClick={() => setSection('portal')} className="absolute top-4 right-4 z-50 flex flex-col items-center justify-center text-gray-400 hover:text-cyan-400 transition-colors group"><div className="bg-gray-800/80 backdrop-blur-sm p-2 rounded-xl border border-gray-700 group-hover:border-cyan-500/50 shadow-lg"><Home className="w-5 h-5" /></div><span className="text-[10px] font-bold mt-1 opacity-70 group-hover:opacity-100">خانه</span></button>
+                      <div className="relative z-10"><CoffeeMaster /></div>
+                  </div>
+              );
+          }
+          
+          if (section === 'roast') {
+              return (
+                  <div className="relative min-h-screen bg-gray-900 font-vazir">
+                      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0"><div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-amber-600/10 rounded-full blur-[80px]"></div><div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-yellow-600/10 rounded-full blur-[80px]"></div></div>
+                      <button onClick={() => setSection('portal')} className="absolute top-4 right-4 z-50 flex flex-col items-center justify-center text-gray-400 hover:text-amber-400 transition-colors group"><div className="bg-gray-800/80 backdrop-blur-sm p-2 rounded-xl border border-gray-700 group-hover:border-amber-500/50 shadow-lg"><Home className="w-5 h-5" /></div><span className="text-[10px] font-bold mt-1 opacity-70 group-hover:opacity-100">خانه</span></button>
+                      <div className="relative z-10"><RoastMaster /></div>
+                  </div>
+              );
+          }
+
+          return null;
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
