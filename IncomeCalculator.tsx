@@ -1,13 +1,19 @@
 import React, { useState, useMemo } from 'react';
 import { Calculator, Plus, Trash2, TrendingUp, TrendingDown, AlertCircle, DollarSign, Briefcase, Coffee, Package } from 'lucide-react';
-import useLocalStorage from '../../hooks/useLocalStorage';
+import useLocalStorage from './hooks/useLocalStorage';
 
+/**
+ * Represents a single fixed expense item.
+ */
 interface ExpenseItem {
   id: string;
   name: string;
   amount: number;
 }
 
+/**
+ * Represents the data structure for the income calculator.
+ */
 interface IncomeData {
   // Variable Costs (COGS)
   beanPricePerKg: number;
@@ -25,6 +31,9 @@ interface IncomeData {
   fixedExpenses: ExpenseItem[];
 }
 
+/**
+ * The initial data for the income calculator.
+ */
 const initialData: IncomeData = {
   beanPricePerKg: 800000,
   dosePerCup: 18,
@@ -41,10 +50,25 @@ const initialData: IncomeData = {
   ],
 };
 
+/**
+ * A component that calculates the profitability of a coffee shop.
+ * It takes into account variable costs, sales, and fixed expenses to calculate
+ * metrics like net profit and the break-even point.
+ * @param {object} props The component props.
+ * @param {() => void} props.onBack A callback function to be called when the user clicks the "back" button.
+ * @returns {JSX.Element} The rendered income calculator component.
+ */
 export const IncomeCalculator: React.FC<{ onBack: () => void }> = ({ onBack }) => {
+  /**
+   * State for the income calculator data, persisted in local storage.
+   */
   const [data, setData] = useLocalStorage<IncomeData>('incomeData', initialData);
   const [activeTab, setActiveTab] = useState<'costs' | 'sales' | 'expenses' | 'results'>('results');
 
+  /**
+   * Performs all the financial calculations based on the input data.
+   * @returns {object} An object containing the calculated financial metrics.
+   */
   const calculations = useMemo(() => {
     // 1. COGS Calculation
     const beanCostPerGram = data.beanPricePerKg / 1000;
@@ -88,24 +112,47 @@ export const IncomeCalculator: React.FC<{ onBack: () => void }> = ({ onBack }) =
     };
   }, [data]);
 
+  /**
+   * Updates a field in the income data.
+   * @param {keyof IncomeData} field The field to update.
+   * @param {number} value The new value for the field.
+   */
   const updateData = (field: keyof IncomeData, value: number) => {
     setData({ ...data, [field]: value });
   };
 
+  /**
+   * Adds a new fixed expense item.
+   */
   const addExpense = () => {
     const newExpense = { id: Date.now().toString(), name: '', amount: 0 };
     setData({ ...data, fixedExpenses: [...data.fixedExpenses, newExpense] });
   };
 
+  /**
+   * Updates a field of a specific fixed expense item.
+   * @param {string} id The id of the expense item to update.
+   * @param {keyof ExpenseItem} field The field to update.
+   * @param {any} value The new value for the field.
+   */
   const updateExpense = (id: string, field: keyof ExpenseItem, value: any) => {
     const updated = data.fixedExpenses.map(ex => ex.id === id ? { ...ex, [field]: value } : ex);
     setData({ ...data, fixedExpenses: updated });
   };
 
+  /**
+   * Removes a fixed expense item.
+   * @param {string} id The id of the expense item to remove.
+   */
   const removeExpense = (id: string) => {
     setData({ ...data, fixedExpenses: data.fixedExpenses.filter(ex => ex.id !== id) });
   };
 
+  /**
+   * Formats a number as currency.
+   * @param {number} val The number to format.
+   * @returns {string} The formatted currency string.
+   */
   const formatCurrency = (val: number) => val.toLocaleString('fa-IR');
 
   return (

@@ -1,9 +1,23 @@
 import React from 'react';
-import { Save, Upload } from 'lucide-react';
+import { Save, Upload, RotateCcw } from 'lucide-react';
+import { defaultRecipes } from './DefaultRecipes';
 
+/**
+ * Props for the SettingsPage component.
+ */
 interface SettingsPageProps {}
 
+/**
+ * A component for managing application settings, including exporting and importing user data.
+ * All data is stored in and retrieved from local storage.
+ * @param {SettingsPageProps} props The component props.
+ * @returns {JSX.Element} The rendered settings page.
+ */
 export const SettingsPage: React.FC<SettingsPageProps> = () => {
+  /**
+   * Handles the export of user data. It retrieves data from local storage,
+   * creates a JSON file, and triggers a download.
+   */
   const handleExport = () => {
     const roastProfiles = localStorage.getItem('roastProfiles');
     const priceListBusinessInfo = localStorage.getItem('priceListBusinessInfo');
@@ -28,6 +42,11 @@ export const SettingsPage: React.FC<SettingsPageProps> = () => {
     document.body.removeChild(linkElement);
   };
 
+  /**
+   * Handles the import of user data from a JSON file.
+   * It reads the file, parses the JSON, and stores the data in local storage.
+   * @param {React.ChangeEvent<HTMLInputElement>} event The file input change event.
+   */
   const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) {
@@ -80,6 +99,14 @@ export const SettingsPage: React.FC<SettingsPageProps> = () => {
     reader.readAsText(file);
   };
 
+  const handleRestoreDefaults = () => {
+    if (window.confirm('آیا مطمئن هستید؟ با این کار لیست دستورالعمل‌های فعلی شما با لیست پیش‌فرض جایگزین می‌شود.')) {
+      localStorage.setItem('brewRecipes', JSON.stringify(defaultRecipes));
+      alert('دستورالعمل‌های پیش‌فرض با موفقیت بازیابی شد.');
+      window.location.reload();
+    }
+  };
+
   return (
     <div className="p-4 max-w-lg mx-auto space-y-8">
       <h1 className="text-2xl font-bold text-center text-amber-400">تنظیمات</h1>
@@ -90,6 +117,13 @@ export const SettingsPage: React.FC<SettingsPageProps> = () => {
           در اینجا می‌توانید از تمام اطلاعات برنامه (شامل پروفایل‌های رُست و لیست قیمت‌ها) پشتیبان بگیرید و یا فایل پشتیبان قبلی را بازگردانی کنید.
         </p>
         <div className="space-y-4">
+          <button
+            onClick={handleRestoreDefaults}
+            className="w-full flex items-center justify-center gap-3 bg-yellow-600 text-white font-bold py-4 px-4 rounded-xl hover:bg-yellow-700 transition-colors shadow-lg shadow-yellow-600/20"
+          >
+            <RotateCcw className="w-5 h-5" />
+            <span>بازیابی دستورالعمل‌های پیش‌فرض</span>
+          </button>
           <button
             onClick={handleExport}
             className="w-full flex items-center justify-center gap-3 bg-blue-600 text-white font-bold py-4 px-4 rounded-xl hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/20"

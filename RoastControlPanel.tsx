@@ -1,17 +1,31 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Edit, ArrowLeft } from 'lucide-react';
-import { RoastProfile, RoastEvent, ControlType, EventType } from '../../types';
-import { formatTime, toCamelCase, getEventDescription } from '../../utils/helpers';
+import { RoastProfile, RoastEvent, ControlType, EventType } from './types';
+import { formatTime, toCamelCase, getEventDescription } from './utils/helpers';
 import { RoastTimeline } from './RoastTimeline';
 import { EventEditModal } from './EventEditModal';
 
+/**
+ * Props for the RoastControlPanel component.
+ */
 interface RoastControlPanelProps {
+  /** The roast profile to load into the control panel. If undefined, the panel will be in a "new roast" state. */
   profileToLoad?: RoastProfile;
+  /** A callback function to be called when the user clicks the "back" button. */
   onBack: () => void;
+  /** A callback function to be called when a roast profile is saved. */
   onSave: (profile: RoastProfile) => void;
 }
 
+/**
+ * The main component for controlling a roast. It allows for recording new roast profiles,
+ * replaying existing profiles, and editing them. It manages the roast timer,
+ * control states (flame, fan, etc.), and all roast events.
+ * @param {RoastControlPanelProps} props The component props.
+ * @returns {JSX.Element} The rendered roast control panel.
+ */
 export const RoastControlPanel: React.FC<RoastControlPanelProps> = ({ profileToLoad, onBack, onSave }) => {
+  // State variables for the component
   const [isRecording, setIsRecording] = useState(false);
   const [isReplaying, setIsReplaying] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -22,6 +36,7 @@ export const RoastControlPanel: React.FC<RoastControlPanelProps> = ({ profileToL
   const [highlightedEventTimestamp, setHighlightedEventTimestamp] = useState<number | null>(null);
   const [eventToEdit, setEventToEdit] = useState<RoastEvent | null>(null);
 
+  // Profile-related state
   const [profileName, setProfileName] = useState('');
   const [greenBeanWeight, setGreenBeanWeight] = useState(0);
   const [chargeTemp, setChargeTemp] = useState(0);
@@ -31,11 +46,10 @@ export const RoastControlPanel: React.FC<RoastControlPanelProps> = ({ profileToL
   const [roastFee, setRoastFee] = useState(0);
   const [isEditingFinal, setIsEditingFinal] = useState(false);
 
+  // Control-related state
   const [baseFlameLevel, setBaseFlameLevel] = useState('LOW');
-
   const [events, setEvents] = useState<RoastEvent[]>([]);
   const [editableEvents, setEditableEvents] = useState<RoastEvent[]>([]);
-
   const [controls, setControls] = useState<Record<string, any>>({
     flame: 'OFF',
     drumFan: 'OFF',
@@ -46,6 +60,9 @@ export const RoastControlPanel: React.FC<RoastControlPanelProps> = ({ profileToL
 
   const timerIntervalRef = useRef<number | null>(null);
 
+  /**
+   * Stops the roast timer.
+   */
   const stopTimer = useCallback(() => {
     if (timerIntervalRef.current) {
       window.clearInterval(timerIntervalRef.current);
@@ -53,8 +70,12 @@ export const RoastControlPanel: React.FC<RoastControlPanelProps> = ({ profileToL
     }
   }, []);
 
+  /**
+   * Effect to initialize the component's state when a profile is loaded or when creating a new profile.
+   */
   useEffect(() => {
     if (profileToLoad) {
+      // Load profile data into state
       setProfileName(profileToLoad.name);
       setGreenBeanWeight(profileToLoad.greenBeanWeight);
       setChargeTemp(profileToLoad.chargeTemp);
@@ -87,6 +108,7 @@ export const RoastControlPanel: React.FC<RoastControlPanelProps> = ({ profileToL
         setBaseFlameLevel(firstFlameOnEvent ? (firstFlameOnEvent.value as string) : 'LOW');
       }
     } else {
+      // Reset state for a new profile
       setIsRecording(false);
       setIsReplaying(false);
       setIsEditing(false);
@@ -110,12 +132,18 @@ export const RoastControlPanel: React.FC<RoastControlPanelProps> = ({ profileToL
     }
   }, [profileToLoad, stopTimer]);
 
+  /**
+   * Effect to clean up the timer interval when the component unmounts.
+   */
   useEffect(() => {
     return () => {
       stopTimer();
     };
   }, [stopTimer]);
 
+  /**
+   * Effect to determine the next event during replay mode.
+   */
   useEffect(() => {
     if (isReplaying && profileToLoad) {
       const upcomingEvent = profileToLoad.events
@@ -127,11 +155,17 @@ export const RoastControlPanel: React.FC<RoastControlPanelProps> = ({ profileToL
     }
   }, [timer, isReplaying, profileToLoad]);
 
+  /**
+   * Starts the roast timer.
+   */
   const startTimer = () => {
     if (timerIntervalRef.current) window.clearInterval(timerIntervalRef.current);
     timerIntervalRef.current = window.setInterval(() => setTimer((prev) => prev + 1), 1000);
   };
 
+  /**
+   * Handles starting a new roast recording.
+   */
   const handleStart = () => {
     if (!profileName || greenBeanWeight <= 0 || chargeTemp <= 0) {
       alert('لطفاً نام پروفایل، وزن دانه سبز و دمای شروع را وارد کنید.');
@@ -160,6 +194,9 @@ export const RoastControlPanel: React.FC<RoastControlPanelProps> = ({ profileToL
     startTimer();
   };
 
+  /**
+   * Handles starting a replay of a loaded profile.
+   */
   const handleStartReplay = () => {
     stopTimer();
     setTimer(0);
@@ -185,6 +222,9 @@ export const RoastControlPanel: React.FC<RoastControlPanelProps> = ({ profileToL
     startTimer();
   };
 
+  /**
+   * Handles the discharge event, ending the roast and saving the profile.
+   */
   const handleDischarge = () => {
     setIsRecording(false);
     stopTimer();
@@ -204,6 +244,13 @@ export const RoastControlPanel: React.FC<RoastControlPanelProps> = ({ profileToL
     onSave(newProfile);
   };
 
+  /**
+   * Adds a new event to the event list during recording.
+   * @param {EventType} type The type of the event.
+   * @param {ControlType} [control] The control being changed (for control change events).
+   * @param {string | number} [value] The new value of the control.
+   * @param {number} [eventTime=timer] The timestamp of the event.
+   */
   const addEvent = useCallback(
     (type: EventType, control?: ControlType, value?: string | number, eventTime = timer) => {
       if (isRecording) {
@@ -213,11 +260,21 @@ export const RoastControlPanel: React.FC<RoastControlPanelProps> = ({ profileToL
     [isRecording, timer]
   );
 
+  /**
+   * Handles a change in a control's value.
+   * @param {ControlType} control The control that was changed.
+   * @param {string | number} value The new value of the control.
+   */
   const handleControlChange = (control: ControlType, value: string | number) => {
     setControls((prev) => ({ ...prev, [toCamelCase(control)]: value }));
     if (isRecording) addEvent(EventType.ControlChange, control, value);
   };
 
+  /**
+   * Handles a change in an initial control's value (before recording starts).
+   * @param {string} controlKey The key of the control that was changed.
+   * @param {string | number} value The new value of the control.
+   */
   const handleInitialControlChange = (controlKey: string, value: string | number) => {
     if (profileToLoad) return;
     setControls((prev) => ({ ...prev, [controlKey]: value }));
@@ -226,21 +283,34 @@ export const RoastControlPanel: React.FC<RoastControlPanelProps> = ({ profileToL
     }
   };
 
+  /**
+   * Sets the base flame level.
+   * @param {string} level The new base flame level.
+   */
   const handleSetBaseFlameLevel = (level: string) => {
     setBaseFlameLevel(level);
     if (isRecording && controls.flame !== 'OFF') handleControlChange(ControlType.Flame, level);
   };
 
+  /**
+   * Toggles the flame on or off.
+   */
   const handleToggleFlame = () => {
     if (!isRecording) return;
     handleControlChange(ControlType.Flame, controls.flame === 'OFF' ? baseFlameLevel : 'OFF');
   };
 
+  /**
+   * Handles the first crack event.
+   */
   const handleFirstCrack = () => {
     setFirstCrackTime(timer);
     addEvent(EventType.FirstCrack);
   };
 
+  /**
+   * Saves the final details of a roast (final weight, temp, etc.).
+   */
   const handleSaveFinalDetails = () => {
     if (profileToLoad) {
       onSave({ ...profileToLoad, finalWeight, finalTemp, greenBeanPrice, roastFee });
@@ -248,10 +318,16 @@ export const RoastControlPanel: React.FC<RoastControlPanelProps> = ({ profileToL
     }
   };
 
+  /**
+   * Effect to update the development timer when the main timer or first crack time changes.
+   */
   useEffect(() => {
     if (firstCrackTime !== null) setDevTimer(timer - firstCrackTime);
   }, [timer, firstCrackTime]);
 
+  /**
+   * Plays a beep sound to notify the user of an event during replay.
+   */
   const playBeep = useCallback(() => {
     const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
     if (!AudioContextClass) return;
@@ -267,6 +343,9 @@ export const RoastControlPanel: React.FC<RoastControlPanelProps> = ({ profileToL
     oscillator.stop(audioContext.currentTime + 0.1);
   }, []);
 
+  /**
+   * Effect to handle events during replay mode.
+   */
   useEffect(() => {
     if (isReplaying) {
       const currentEvents = profileToLoad?.events.filter((e) => e.timestamp === timer) || [];
@@ -295,6 +374,9 @@ export const RoastControlPanel: React.FC<RoastControlPanelProps> = ({ profileToL
     }
   }, [timer, isReplaying, profileToLoad, stopTimer, playBeep]);
 
+  /**
+   * Enters editing mode for the loaded profile.
+   */
   const handleEditProfile = () => {
     if (profileToLoad) {
       setEditableEvents([...profileToLoad.events].sort((a, b) => a.timestamp - b.timestamp));
@@ -302,6 +384,9 @@ export const RoastControlPanel: React.FC<RoastControlPanelProps> = ({ profileToL
     }
   };
 
+  /**
+   * Cancels editing mode and reverts any changes.
+   */
   const handleCancelEdit = () => {
     setIsEditing(false);
     setEditableEvents([]);
@@ -313,6 +398,9 @@ export const RoastControlPanel: React.FC<RoastControlPanelProps> = ({ profileToL
     }
   };
 
+  /**
+   * Saves changes made in editing mode.
+   */
   const handleSaveChanges = () => {
     if (!profileName || greenBeanWeight <= 0 || chargeTemp <= 0) {
       alert('لطفاً نام پروفایل، وزن دانه سبز و دمای شروع معتبر وارد کنید.');
@@ -332,6 +420,10 @@ export const RoastControlPanel: React.FC<RoastControlPanelProps> = ({ profileToL
     }
   };
 
+  /**
+   * Handles updating an event from the event edit modal.
+   * @param {RoastEvent} updatedEvent The updated event.
+   */
   const handleEventUpdate = (updatedEvent: RoastEvent) => {
     setEditableEvents((prev) =>
       prev
@@ -348,6 +440,10 @@ export const RoastControlPanel: React.FC<RoastControlPanelProps> = ({ profileToL
     if (eventToEdit) setEventToEdit(null);
   };
 
+  /**
+   * Handles updating an event's timestamp after dragging it on the timeline.
+   * @param {RoastEvent} draggedEvent The event that was dragged.
+   */
   const handleEventDragUpdate = (draggedEvent: RoastEvent) => {
     setEditableEvents((prev) =>
       prev
@@ -362,6 +458,15 @@ export const RoastControlPanel: React.FC<RoastControlPanelProps> = ({ profileToL
     );
   };
 
+  /**
+   * A button component for the control panel.
+   * @param {object} props The component props.
+   * @param {string} props.label The label of the button.
+   * @param {boolean} props.active Whether the button is active.
+   * @param {() => void} props.onClick The function to call when the button is clicked.
+   * @param {boolean} [props.disabled] Whether the button is disabled.
+   * @returns {JSX.Element} The rendered control button.
+   */
   const ControlButton: React.FC<{ label: string; active: boolean; onClick: () => void; disabled?: boolean }> = ({
     label,
     active,
@@ -381,6 +486,10 @@ export const RoastControlPanel: React.FC<RoastControlPanelProps> = ({ profileToL
     </button>
   );
 
+  /**
+   * Calculates the duration of the roast for the timeline.
+   * @returns {number} The duration of the roast in seconds.
+   */
   const calculateDuration = () => {
     const currentEvents = isEditing ? editableEvents : events;
     const dischargeEvent = currentEvents.find((e) => e.type === EventType.Discharge);
@@ -391,6 +500,9 @@ export const RoastControlPanel: React.FC<RoastControlPanelProps> = ({ profileToL
     return 1200;
   };
 
+  /**
+   * Calculates the final cost per kilogram of the roasted coffee.
+   */
   const finalCostPerKg = useMemo(() => {
     if (!profileToLoad) return 0;
     const { greenBeanWeight, finalWeight, greenBeanPrice, roastFee } = profileToLoad;
@@ -409,6 +521,9 @@ export const RoastControlPanel: React.FC<RoastControlPanelProps> = ({ profileToL
     return totalCost / fWeightKg;
   }, [profileToLoad]);
 
+  /**
+   * Calculates the weight loss percentage of the roast.
+   */
   const weightLossPercentage = useMemo(() => {
     if (!profileToLoad) return 0;
     const { greenBeanWeight, finalWeight } = profileToLoad;
