@@ -1,14 +1,32 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ArrowRight, Play, CheckCircle, Droplets, AlertCircle, RotateCcw, Square, Clock, SkipForward, Coffee } from 'lucide-react';
 
+/**
+ * Props for the Backflush component.
+ */
 interface BackflushProps {
+  /** A callback function to be called when the user clicks the "back" button. */
   onBack: () => void;
 }
 
+/**
+ * Defines the different phases of the backflush process.
+ */
 type Phase = 'intro' | 'detergent' | 'rinse_intro' | 'rinse' | 'soak_intro' | 'soak_timer' | 'finished';
+
+/**
+ * Defines the state of the espresso machine pump.
+ */
 type PumpState = 'on' | 'off' | 'waiting';
 
+/**
+ * A component that guides the user through the process of backflushing an espresso machine.
+ * It provides a timer and instructions for each phase of the process.
+ * @param {BackflushProps} props The component props.
+ * @returns {JSX.Element} The rendered backflush component.
+ */
 export const Backflush: React.FC<BackflushProps> = ({ onBack }) => {
+  // State variables for the component
   const [phase, setPhase] = useState<Phase>('intro');
   const [currentCycle, setCurrentCycle] = useState(1);
   const [timer, setTimer] = useState(0);
@@ -16,23 +34,30 @@ export const Backflush: React.FC<BackflushProps> = ({ onBack }) => {
   
   const timerIntervalRef = useRef<number | null>(null);
 
-  // Constants
+  // Constants for the backflush process
   const DETERGENT_CYCLES = 5;
   const DETERGENT_ON_TIME = 10;
   const DETERGENT_OFF_TIME = 10;
-
   const RINSE_CYCLES = 10;
   const RINSE_ON_TIME = 5;
   const RINSE_OFF_TIME = 5;
-  
   const SOAK_TIME = 20 * 60; // 20 minutes in seconds
 
+  /**
+   * Formats a time in seconds into a mm:ss format.
+   * @param {number} seconds The time in seconds.
+   * @returns {string} The formatted time string.
+   */
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  /**
+   * Plays a beep sound to provide auditory feedback to the user.
+   * @param {'start' | 'stop' | 'finish'} type The type of beep to play.
+   */
   const playBeep = (type: 'start' | 'stop' | 'finish') => {
     const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
     if (!AudioContextClass) return;
@@ -75,12 +100,18 @@ export const Backflush: React.FC<BackflushProps> = ({ onBack }) => {
     }
   };
 
+  /**
+   * Effect to clean up the timer interval when the component unmounts.
+   */
   useEffect(() => {
     return () => {
       if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
     };
   }, []);
 
+  /**
+   * Effect to manage the timer interval.
+   */
   useEffect(() => {
     const isRunning = (pumpState === 'on' || pumpState === 'off') || phase === 'soak_timer';
     
@@ -95,8 +126,12 @@ export const Backflush: React.FC<BackflushProps> = ({ onBack }) => {
     return () => {
       if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pumpState, timer, phase]);
 
+  /**
+   * Handles the logic for when a timer finishes.
+   */
   const handleTimerFinish = () => {
     if (phase === 'soak_timer') {
         playBeep('finish');
@@ -145,6 +180,9 @@ export const Backflush: React.FC<BackflushProps> = ({ onBack }) => {
     }
   };
 
+  /**
+   * Starts a sequence of backflush cycles.
+   */
   const startPhaseSequence = () => {
     // Starts the first cycle of the sequence
     playBeep('start');
@@ -158,12 +196,18 @@ export const Backflush: React.FC<BackflushProps> = ({ onBack }) => {
     }
   };
 
+  /**
+   * Stops the current backflush sequence.
+   */
   const stopSequence = () => {
       setPumpState('waiting');
       setTimer(0);
       if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
   };
 
+  /**
+   * Skips the current phase and moves to the next one.
+   */
   const skipToNextPhase = () => {
       stopSequence();
       playBeep('finish'); // Feedback
@@ -176,7 +220,10 @@ export const Backflush: React.FC<BackflushProps> = ({ onBack }) => {
       }
   };
 
-  // Render Helpers
+  /**
+   * Gets the total number of cycles for the current phase.
+   * @returns {number} The total number of cycles.
+   */
   const getTotalCycles = () => (phase === 'detergent' ? DETERGENT_CYCLES : RINSE_CYCLES);
   
   return (

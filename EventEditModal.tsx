@@ -1,25 +1,50 @@
 import React, { useState } from 'react';
-import { ControlType, EventType, RoastEvent } from '../../types';
-import { getEventDescription } from '../../utils/helpers';
+import { ControlType, EventType, RoastEvent } from './types';
+import { getEventDescription } from './utils/helpers';
 
+/**
+ * Props for the EventEditModal component.
+ */
 interface EventEditModalProps {
+  /** The event to be edited. */
   event: RoastEvent;
+  /** A callback function to be called when the event is saved. */
   onSave: (event: RoastEvent) => void;
+  /** A callback function to be called when the modal is closed. */
   onClose: () => void;
 }
 
+/**
+ * A modal component for editing the details of a roast event,
+ * such as its timestamp and value.
+ * @param {EventEditModalProps} props The component props.
+ * @returns {JSX.Element} The rendered event edit modal.
+ */
 export const EventEditModal: React.FC<EventEditModalProps> = ({ event, onSave, onClose }) => {
   const [tempEvent, setTempEvent] = useState<RoastEvent>(event);
 
+  /**
+   * Handles changes to the event's timestamp.
+   * @param {React.ChangeEvent<HTMLInputElement>} e The change event.
+   */
   const handleTimestampChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const seconds = parseInt(e.target.value, 10) || 0;
     setTempEvent((prev) => ({ ...prev, timestamp: seconds }));
   };
 
+  /**
+   * Handles changes to the event's value.
+   * @param {string | number} value The new value.
+   */
   const handleValueChange = (value: string | number) => {
     setTempEvent((prev) => ({ ...prev, value }));
   };
 
+  /**
+   * Renders the appropriate editor for the event's value,
+   * depending on the control type.
+   * @returns {JSX.Element | null} The rendered value editor.
+   */
   const renderValueEditor = () => {
     if (tempEvent.type !== EventType.ControlChange || !tempEvent.control) return null;
 
