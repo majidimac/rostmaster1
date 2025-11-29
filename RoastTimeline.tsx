@@ -1,22 +1,39 @@
 import React, { useEffect, useRef, useCallback } from 'react';
 import { Flame, Wind, RotateCw, Zap, LogOut } from 'lucide-react';
-import { ControlType, EventType, RoastEvent } from '../../types';
-import { getEventDescription } from '../../utils/helpers';
+import { ControlType, EventType, RoastEvent } from './types';
+import { getEventDescription } from './utils/helpers';
 
+/**
+ * Props for the RoastTimeline component.
+ */
 interface RoastTimelineProps {
+  /** An array of roast events to display on the timeline. */
   events: RoastEvent[];
+  /** The total duration of the roast in seconds. */
   duration: number;
+  /** The current time of the roast in seconds, used to show the progress. */
   currentTime: number;
+  /** A boolean indicating whether the timeline is in editing mode. */
   isEditing: boolean;
+  /** A callback function to be called when an event is updated (e.g., dragged). */
   onEventUpdate?: (event: RoastEvent) => void;
+  /** A callback function to be called when an event is clicked. */
   onEventClick?: (event: RoastEvent) => void;
+  /** The timestamp of an event to be highlighted. */
   highlightedEventTimestamp?: number | null;
 }
 
+/**
+ * Returns an icon for a given roast event.
+ * @param {RoastEvent} event The roast event.
+ * @returns {JSX.Element | null} The icon for the event, or null if the event type is not recognized.
+ */
 const getEventIcon = (event: RoastEvent) => {
   switch (event.type) {
     case EventType.FirstCrack:
       return <Zap className="w-5 h-5 text-orange-400" />;
+    case EventType.SecondCrack:
+      return <Zap className="w-5 h-5 text-orange-600" />;
     case EventType.Discharge:
       return <LogOut className="w-5 h-5 text-red-500" />;
     case EventType.ControlChange:
@@ -37,6 +54,13 @@ const getEventIcon = (event: RoastEvent) => {
   }
 };
 
+/**
+ * A component that displays a timeline of roast events.
+ * It supports displaying events, showing the current roast progress,
+ * and allows for drag-and-drop editing of events when in editing mode.
+ * @param {RoastTimelineProps} props The component props.
+ * @returns {JSX.Element} The rendered roast timeline.
+ */
 export const RoastTimeline: React.FC<RoastTimelineProps> = ({
   events,
   duration,
@@ -49,12 +73,20 @@ export const RoastTimeline: React.FC<RoastTimelineProps> = ({
   const timelineRef = useRef<HTMLDivElement>(null);
   const draggingEventRef = useRef<RoastEvent | null>(null);
 
+  /**
+   * Handles the mouse down event on a roast event, initiating a drag operation.
+   * @param {React.MouseEvent} e The mouse event.
+   * @param {RoastEvent} roastEvent The event being dragged.
+   */
   const handleMouseDown = (e: React.MouseEvent, roastEvent: RoastEvent) => {
     if (!isEditing || !onEventUpdate) return;
     draggingEventRef.current = roastEvent;
     e.preventDefault();
   };
 
+  /**
+   * Handles the mouse move event, updating the position of the dragged event.
+   */
   const handleMouseMove = useCallback(
     (e: MouseEvent) => {
       if (!draggingEventRef.current || !timelineRef.current || !onEventUpdate) return;
@@ -69,6 +101,9 @@ export const RoastTimeline: React.FC<RoastTimelineProps> = ({
     [duration, onEventUpdate]
   );
 
+  /**
+   * Handles the mouse up event, ending the drag operation.
+   */
   const handleMouseUp = useCallback(() => {
     draggingEventRef.current = null;
   }, []);

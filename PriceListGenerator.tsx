@@ -1,8 +1,11 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { Download, Share2, Trash2, PlusCircle } from 'lucide-react';
-import useLocalStorage from '../hooks/useLocalStorage';
+import useLocalStorage from './hooks/useLocalStorage';
 import { BusinessInfo, ProductList, Product } from '../types';
 
+/**
+ * Initial state for the business information.
+ */
 const initialBusinessInfo: BusinessInfo = {
   brandName: '',
   phone: '',
@@ -10,8 +13,20 @@ const initialBusinessInfo: BusinessInfo = {
   telegram: '',
   whatsapp: '',
 };
+
+/**
+ * Initial state for the product list.
+ */
 const initialProducts: ProductList = { greenBean: [], coffee: [], powders: [] };
 
+/**
+ * A component that displays a preview of the price list.
+ * @param {object} props - The component props.
+ * @param {BusinessInfo} props.businessInfo - The business information to display.
+ * @param {ProductList} props.products - The list of products to display.
+ * @param {React.RefObject<HTMLDivElement | null>} props.innerRef - A ref to the preview element, used for capturing the image.
+ * @returns {JSX.Element} The rendered price list preview.
+ */
 const PriceListPreview: React.FC<{
   businessInfo: BusinessInfo;
   products: ProductList;
@@ -94,24 +109,52 @@ const PriceListPreview: React.FC<{
   );
 };
 
+/**
+ * A component for generating a price list image.
+ * It allows users to input their business information and product details,
+ * and then generates a downloadable and shareable image of the price list.
+ * @returns {JSX.Element} The rendered price list generator component.
+ */
 export const PriceListGenerator: React.FC = () => {
+  /**
+   * State for the business information, persisted in local storage.
+   */
   const [businessInfo, setBusinessInfo] = useLocalStorage<BusinessInfo>(
     'priceListBusinessInfo',
     initialBusinessInfo
   );
+
+  /**
+   * State for the product list, persisted in local storage.
+   */
   const [products, setProducts] = useLocalStorage<ProductList>('priceListProducts', initialProducts);
   const [isGenerating, setIsGenerating] = useState(false);
   const previewRef = useRef<HTMLDivElement>(null);
 
+  /**
+   * Handles changes to the business information form.
+   * @param {React.ChangeEvent<HTMLInputElement>} e The change event.
+   */
   const handleBusinessInfoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setBusinessInfo({ ...businessInfo, [e.target.name]: e.target.value });
   };
 
+  /**
+   * Adds a new product to a specified category.
+   * @param {keyof ProductList} category The category to add the product to.
+   */
   const addProduct = (category: keyof ProductList) => {
     const newProduct: Product = { id: Date.now().toString(), name: '', price: '' };
     setProducts({ ...products, [category]: [...products[category], newProduct] });
   };
 
+  /**
+   * Updates a field of a specific product.
+   * @param {keyof ProductList} category The category of the product to update.
+   * @param {string} id The id of the product to update.
+   * @param {keyof Product} field The field to update.
+   * @param {string} value The new value for the field.
+   */
   const updateProduct = (
     category: keyof ProductList,
     id: string,
@@ -124,11 +167,19 @@ export const PriceListGenerator: React.FC = () => {
     setProducts({ ...products, [category]: updatedProducts });
   };
 
+  /**
+   * Removes a product from a specified category.
+   * @param {keyof ProductList} category The category of the product to remove.
+   * @param {string} id The id of the product to remove.
+   */
   const removeProduct = (category: keyof ProductList, id: string) => {
     const filteredProducts = products[category].filter((p) => p.id !== id);
     setProducts({ ...products, [category]: filteredProducts });
   };
 
+  /**
+   * Resets all business information and product data.
+   */
   const handleReset = () => {
     if (window.confirm('آیا میخواهید تمام اطلاعات لیست قیمت را پاک کنید؟')) {
       setBusinessInfo(initialBusinessInfo);
@@ -136,6 +187,11 @@ export const PriceListGenerator: React.FC = () => {
     }
   };
 
+  /**
+   * Generates an image of the price list preview.
+   * @param {'png' | 'jpeg' | 'blob'} format The format of the image to generate.
+   * @returns {Promise<string | Blob | null>} The generated image data, or null if an error occurred.
+   */
   const generateImage = useCallback(async (format: 'png' | 'jpeg' | 'blob') => {
     if (!previewRef.current || !(window as any).htmlToImage) {
         alert("Library not loaded or element not found");
@@ -157,16 +213,22 @@ export const PriceListGenerator: React.FC = () => {
     }
   }, []);
 
+  /**
+   * Handles downloading the generated price list image.
+   */
   const handleDownload = async () => {
     const dataUrl = await generateImage('jpeg');
     if (dataUrl) {
       const link = document.createElement('a');
       link.download = `${businessInfo.brandName || 'pricelist'}.jpeg`;
-      link.href = dataUrl;
+      link.href = dataUrl as string;
       link.click();
     }
   };
 
+  /**
+   * Handles sharing the generated price list image.
+   */
   const handleShare = async () => {
     const blob = (await generateImage('blob')) as Blob;
     if (blob && navigator.share) {
@@ -189,6 +251,13 @@ export const PriceListGenerator: React.FC = () => {
     }
   };
 
+  /**
+   * A component for a group of product inputs.
+   * @param {object} props - The component props.
+   * @param {string} props.title - The title of the product group.
+   * @param {keyof ProductList} props.categoryKey - The key of the category for this group.
+   * @returns {JSX.Element} The rendered product input group.
+   */
   const ProductInputGroup: React.FC<{ title: string; categoryKey: keyof ProductList }> = ({
     title,
     categoryKey,
