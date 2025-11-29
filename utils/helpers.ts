@@ -17,6 +17,8 @@ export const getEventDescription = (event: RoastEvent, includeTime = true): stri
   switch (event.type) {
     case EventType.FirstCrack:
       return `ترک اول${timeString}`;
+    case EventType.SecondCrack:
+      return `ترک دوم${timeString}`;
     case EventType.Discharge:
       return `تخلیه${timeString}`;
     case EventType.ControlChange: {

@@ -1,22 +1,99 @@
 import React, { useState } from 'react';
-import { Flame, Coffee, ClipboardList, Settings, Store, ArrowRight, Home } from 'lucide-react';
-import { RoastProfiler } from './modules/RoastProfiler';
-import { MixCalculator } from './modules/MixCalculator';
-import { PriceListGenerator } from './modules/PriceListGenerator';
-import { SettingsPage } from './modules/Settings';
-import { CoffeeMaster } from './modules/CoffeeMaster';
+import { Flame, Coffee, ClipboardList, Settings, Store, ArrowRight, Home, Calculator, Droplets } from 'lucide-react';
+import { RoastControlPanel } from './RoastControlPanel';
+import useLocalStorage from './hooks/useLocalStorage';
+import { RoastProfile } from './types';
+import { RoastProfileList } from './RoastProfileList';
+import { MixCalculator } from './MixCalculator';
+import { PriceListGenerator } from './PriceListGenerator';
+import { SettingsPage } from './Settings';
+import { CoffeeMaster } from './CoffeeMaster';
 
+/**
+ * Defines the available pages within the Roast Master section.
+ */
 type Page = 'roast' | 'calculator' | 'pricelist' | 'settings';
+
+/**
+ * Defines the main sections of the application.
+ */
 type AppSection = 'portal' | 'roast-master' | 'coffee-master';
 
+/**
+ * The main application component. It acts as a router to navigate between the main portal,
+ * the Roast Master section, and the Coffee Master section.
+ * @returns {JSX.Element} The rendered application.
+ */
 const App: React.FC = () => {
+  /**
+   * State to manage the currently active application section.
+   * 'portal' is the main landing page.
+   * 'roast-master' is the section for roast profiling, mix calculation, and price lists.
+   * 'coffee-master' is the section for barista tools and cafe management.
+   */
   const [appSection, setAppSection] = useState<AppSection>('portal');
-  const [activePage, setActivePage] = useState<Page>('roast');
 
+  /**
+   * State to manage the currently active page within the Roast Master section.
+   * Defaults to 'roast'.
+   */
+  const [activePage, setActivePage] = useState<Page>('roast');
+  const [coffeeMasterPage, setCoffeeMasterPage] = useState<'menu' | 'backflush' | 'income' | 'recipes'>('menu');
+
+  const [profiles, setProfiles] = useLocalStorage<RoastProfile[]>('roastProfiles', []);
+  const [selectedProfile, setSelectedProfile] = useState<RoastProfile | undefined>(undefined);
+  const [view, setView] = useState<'list' | 'new' | 'edit'>('list');
+
+  const handleSelectProfile = (profile: RoastProfile) => {
+    setSelectedProfile(profile);
+    setView('edit');
+  };
+
+  const handleBack = () => {
+    setSelectedProfile(undefined);
+    setView('list');
+  };
+
+  const handleSaveProfile = (profileToSave: RoastProfile) => {
+    const existingIndex = profiles.findIndex(p => p.id === profileToSave.id);
+    if (existingIndex > -1) {
+      const updatedProfiles = [...profiles];
+      updatedProfiles[existingIndex] = profileToSave;
+      setProfiles(updatedProfiles);
+    } else {
+      setProfiles([...profiles, profileToSave]);
+    }
+    setView('list');
+    setSelectedProfile(undefined);
+  };
+
+  const handleNewProfile = () => {
+    setSelectedProfile(undefined);
+    setView('new');
+  };
+
+  const handleDeleteProfile = (id: string) => {
+    if (window.confirm('آیا از حذف این پروفایل اطمینان دارید؟')) {
+      setProfiles(profiles.filter(p => p.id !== id));
+    }
+  };
+
+  /**
+   * Renders the appropriate component for the active page in the Roast Master section.
+   * @returns {JSX.Element} The component for the active page.
+   */
   const renderRoastMasterPage = () => {
+    if (activePage === 'roast') {
+      if (view === 'new') {
+        return <RoastControlPanel onBack={handleBack} onSave={handleSaveProfile} />;
+      }
+      if (view === 'edit' && selectedProfile) {
+        return <RoastControlPanel profileToLoad={selectedProfile} onBack={handleBack} onSave={handleSaveProfile} />;
+      }
+      return <RoastProfileList profiles={profiles} onSelectProfile={handleSelectProfile} onNewProfile={handleNewProfile} onDeleteProfile={handleDeleteProfile} />;
+    }
+
     switch (activePage) {
-      case 'roast':
-        return <RoastProfiler />;
       case 'calculator':
         return <MixCalculator />;
       case 'pricelist':
@@ -24,23 +101,36 @@ const App: React.FC = () => {
       case 'settings':
         return <SettingsPage />;
       default:
-        return <RoastProfiler />;
+        return <RoastProfileList profiles={profiles} onSelectProfile={handleSelectProfile} onNewProfile={handleNewProfile} onDeleteProfile={handleDeleteProfile} />;
     }
   };
 
-  const NavItem: React.FC<{ page: Page; label: string; icon: React.ReactNode }> = ({ page, label, icon }) => (
+  /**
+   * A navigation item component for the bottom navigation bar in the Roast Master section.
+   * @param {object} props - The component props.
+   * @param {Page} props.page - The page this item navigates to.
+   * @param {string} props.label - The text label for the navigation item.
+   * @param {React.ReactNode} props.icon - The icon for the navigation item.
+   * @returns {JSX.Element} A button element that acts as a navigation link.
+   */
+  const NavItem: React.FC<{ page: Page; label: string; icon: React.ReactNode; [key: string]: any }> = ({ page, label, icon, ...rest }) => (
     <button
       onClick={() => setActivePage(page)}
       className={`flex flex-col items-center justify-center w-full pt-3 pb-2 text-xs font-medium transition-colors duration-200 ${
         activePage === page ? 'text-amber-400' : 'text-gray-400 hover:text-amber-300'
       }`}
+      {...rest}
     >
       {icon}
       <span className="mt-1">{label}</span>
     </button>
   );
 
-  // Common Home Button Component
+  /**
+   * A reusable home button component that navigates back to the main portal.
+   * This version is themed for the Roast Master section.
+   * @returns {JSX.Element} A button element that navigates to the portal.
+   */
   const HomeButton = () => (
     <button 
         onClick={() => setAppSection('portal')}
@@ -54,7 +144,11 @@ const App: React.FC = () => {
     </button>
   );
 
-  // Coffee Master Specific Home Button (Cyan Theme)
+  /**
+   * A reusable home button component that navigates back to the main portal.
+   * This version is themed for the Coffee Master section with a cyan color scheme.
+   * @returns {JSX.Element} A button element that navigates to the portal.
+   */
   const CoffeeHomeButton = () => (
     <button 
         onClick={() => setAppSection('portal')}
@@ -67,6 +161,7 @@ const App: React.FC = () => {
         <span className="text-[10px] font-bold mt-1 opacity-70 group-hover:opacity-100 transition-opacity">خانه</span>
     </button>
   );
+
 
   if (appSection === 'portal') {
     return (
@@ -135,7 +230,7 @@ const App: React.FC = () => {
       return (
         <div className="relative">
           <CoffeeHomeButton />
-          <CoffeeMaster />
+          <CoffeeMaster setCoffeeMasterPage={setCoffeeMasterPage} coffeeMasterPage={coffeeMasterPage} />
         </div>
       );
   }
@@ -151,7 +246,7 @@ const App: React.FC = () => {
           <NavItem page="roast" label="رُست" icon={<Flame className="w-6 h-6" />} />
           <NavItem page="calculator" label="میکس" icon={<Coffee className="w-6 h-6" />} />
           <NavItem page="pricelist" label="لیست قیمت" icon={<ClipboardList className="w-6 h-6" />} />
-          <NavItem page="settings" label="تنظیمات" icon={<Settings className="w-6 h-6" />} />
+          <NavItem data-testid="settings-button" page="settings" label="تنظیمات" icon={<Settings className="w-6 h-6" />} />
         </nav>
       </footer>
     </div>
