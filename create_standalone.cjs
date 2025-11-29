@@ -34,8 +34,10 @@ if (jsFile) {
   console.log(`Inlining ${jsFile}...`);
   const jsPath = path.join(assetsPath, jsFile);
   const jsContent = fs.readFileSync(jsPath, 'utf8');
-  const jsTag = `<script>${jsContent}</script>`;
-  htmlContent = htmlContent.replace(/<script[^>]+src="[^"]+"[^>]+><\/script>/, jsTag);
+  // Prepend "module" to the script tag to ensure it's treated as a module
+  const jsTag = `<script type="module">${jsContent}</script>`;
+  // Use a more robust regex to find and replace the script tag
+  htmlContent = htmlContent.replace(/<script type="module" crossorigin src=".*?"><\/script>/, jsTag);
 } else {
   console.log('No JS file found to inline.');
 }
